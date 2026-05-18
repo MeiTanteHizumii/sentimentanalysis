@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SentimentIQ — MockShop Review Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ── Reset & Variables ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0d0d0d;
+  --bg2:       #141414;
+  --bg3:       #1c1c1c;
+  --border:    #2a2a2a;
+  --border2:   #333;
+  --text:      #f0ede6;
+  --muted:     #666;
+  --muted2:    #444;
+  --accent:    #ee4d2d;
+  --accent2:   #ff7a5c;
+  --green:     #22c55e;
+  --red:       #ef4444;
+  --yellow:    #f59e0b;
+  --blue:      #3b82f6;
+  --positive:  #22c55e;
+  --negative:  #ef4444;
+  --neutral:   #3b82f6;
+  --mixed:     #f59e0b;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Scanline texture */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  pointer-events: none; z-index: 9998;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────────── */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  position: sticky; top: 0;
+  background: rgba(13,13,13,0.95);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+}
+
+.logo-block {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 0;
+  border-right: 1px solid var(--border);
+  padding-right: 24px;
+}
+
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 2px;
+  color: var(--text);
+  line-height: 1;
+}
+
+.logo span { color: var(--accent); }
+
+.logo-sub {
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.header-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+.product-link {
+  color: var(--accent);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s;
+  font-size: 11px;
+}
+
+.product-link:hover { color: var(--accent2); }
+
+.live-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(238,77,45,0.1);
+  border: 1px solid rgba(238,77,45,0.3);
+  padding: 5px 12px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin: auto 0;
+}
+
+.live-dot {
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.3;transform:scale(0.6)} }
+
+/* ── Layout ────────────────────────────────────────────────────────────────── */
+.page { max-width: 1280px; margin: 0 auto; padding: 32px; }
+
+/* ── Section labels ────────────────────────────────────────────────────────── */
+.section-label {
+  font-size: 9px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── KPI strip ─────────────────────────────────────────────────────────────── */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+  animation: fadeUp 0.5s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.kpi {
+  padding: 20px 18px;
+  border-right: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  transition: background 0.2s;
+}
+
+.kpi:last-child { border-right: none; }
+.kpi:hover { background: var(--bg2); }
+
+.kpi::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 2px; width: 0;
+  background: var(--accent);
+  transition: width 1s ease;
+}
+
+.kpi.loaded::before { width: 100%; }
+
+.kpi-label {
+  font-size: 8px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.kpi-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 38px;
+  letter-spacing: 1px;
+  line-height: 1;
+  margin-bottom: 4px;
+  transition: color 0.3s;
+}
+
+.kpi-sub { font-size: 10px; color: var(--muted); }
+
+/* ── Grid ──────────────────────────────────────────────────────────────────── */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+@media (max-width: 900px) {
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .kpi-strip { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Cards ─────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  padding: 20px;
+  animation: fadeUp 0.5s ease both;
+}
+
+.card-title {
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── Sentiment bar ─────────────────────────────────────────────────────────── */
+.sent-bar-wrap { margin-bottom: 24px; }
+
+.sent-bar {
+  display: flex;
+  height: 48px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.sent-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: #0d0d0d;
+  transition: flex 0.8s cubic-bezier(0.34,1.56,0.64,1);
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.sent-seg.positive { background: var(--positive); }
+.sent-seg.negative { background: var(--negative); }
+.sent-seg.neutral  { background: var(--neutral); }
+.sent-seg.mixed    { background: var(--yellow); }
+
+.sent-legend {
+  display: flex; gap: 20px; flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 10px; color: var(--muted);
+}
+
+.legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Dimension bars ────────────────────────────────────────────────────────── */
+.dim-row { margin-bottom: 14px; }
+.dim-top { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 6px; }
+.dim-name { color: var(--muted); text-transform: capitalize; letter-spacing: 1px; }
+.dim-score { font-weight: 500; }
+.dim-track { height: 3px; background: var(--border2); }
+.dim-fill { height: 100%; transition: width 1.2s cubic-bezier(0.34,1.56,0.64,1); }
+
+/* ── Tags ──────────────────────────────────────────────────────────────────── */
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.tag {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border: 1px solid;
+}
+
+.tag.cat     { border-color: rgba(238,77,45,0.4); color: var(--accent2); background: rgba(238,77,45,0.06); }
+.tag.kw      { border-color: var(--border2); color: var(--muted); background: var(--bg3); }
+.tag.intent  { border-color: rgba(59,130,246,0.4); color: #60a5fa; background: rgba(59,130,246,0.06); }
+
+/* ── Alert boxes ───────────────────────────────────────────────────────────── */
+.alerts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+.alert {
+  border: 1px solid;
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.alert::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+}
+
+.alert.danger { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.05); }
+.alert.danger::before { background: var(--red); }
+.alert.warn   { border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.05); }
+.alert.warn::before { background: var(--yellow); }
+
+.alert-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 48px;
+  line-height: 1;
+  letter-spacing: 1px;
+}
+
+.alert.danger .alert-num { color: var(--red); }
+.alert.warn   .alert-num { color: var(--yellow); }
+
+.alert-title { font-size: 11px; font-weight: 500; margin-bottom: 4px; letter-spacing: 1px; }
+.alert-body  { font-size: 10px; color: var(--muted); line-height: 1.6; }
+
+/* ── Review table ──────────────────────────────────────────────────────────── */
+.table-wrap {
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.filter-row {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+  overflow-x: auto;
+}
+
+.filter-tab {
+  padding: 10px 18px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  border-right: 1px solid var(--border);
+  color: var(--muted);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.filter-tab.active { background: var(--accent); color: #0d0d0d; }
+.filter-tab:hover:not(.active) { background: var(--bg2); color: var(--text); }
+
+.table-scroll { overflow-x: auto; max-height: 480px; overflow-y: auto; }
+
+table { width: 100%; border-collapse: collapse; font-size: 11px; }
+
+th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 8px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  font-weight: 400;
+  white-space: nowrap;
+  position: sticky; top: 0;
+}
+
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(42,42,42,0.5);
+  vertical-align: top;
+}
+
+tr:hover td { background: rgba(255,255,255,0.02); }
+tr.new-review td { animation: highlight 2s ease; }
+
+@keyframes highlight {
+  0%,20% { background: rgba(238,77,45,0.15); }
+  100%    { background: transparent; }
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.badge.positive { border-color: rgba(34,197,94,0.4); color: var(--green); }
+.badge.negative { border-color: rgba(239,68,68,0.4); color: var(--red); }
+.badge.neutral  { border-color: rgba(59,130,246,0.4); color: var(--blue); }
+.badge.mixed    { border-color: rgba(245,158,11,0.4); color: var(--yellow); }
+
+.stars { color: var(--accent); letter-spacing: -2px; font-size: 11px; }
+.cat-mini {
+  display: inline-block;
+  font-size: 8px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 1px 6px;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  margin: 1px;
+}
+
+/* ── Comment form ──────────────────────────────────────────────────────────── */
+.comment-form {
+  border: 1px solid var(--border);
+  padding: 24px;
+  margin-bottom: 16px;
+  background: var(--bg2);
+  animation: fadeUp 0.5s ease 0.3s both;
+}
+
+.form-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+
+.form-sub {
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+}
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.form-full { margin-bottom: 12px; }
+
+label {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+input[type="text"], select, textarea {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  resize: vertical;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(238,77,45,0.1);
+}
+
+select option { background: var(--bg3); }
+
+/* Star picker */
+.star-picker { display: flex; gap: 4px; margin-bottom: 12px; }
+
+.star-btn {
+  font-size: 22px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--border2);
+  transition: color 0.15s, transform 0.15s;
+  line-height: 1;
+}
+
+.star-btn.active, .star-btn:hover { color: var(--accent); transform: scale(1.2); }
+
+.star-label { font-size: 9px; letter-spacing: 2px; color: var(--muted); margin-bottom: 8px; }
+
+/* Submit */
+.submit-row { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+
+.btn-submit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent);
+  color: #0d0d0d;
+  border: none;
+  padding: 12px 28px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 15px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn-submit:hover { background: var(--accent2); }
+.btn-submit:active { transform: scale(0.98); }
+.btn-submit:disabled { background: var(--border2); color: var(--muted); cursor: not-allowed; }
+
+.submit-note { font-size: 10px; color: var(--muted); }
+
+/* Analyzing animation */
+.analyzing {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 2px;
+}
+
+.analyzing.show { display: flex; }
+
+.spin {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(238,77,45,0.3);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 32px; right: 32px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  padding: 14px 20px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 9999;
+  max-width: 320px;
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast-title { font-size: 12px; margin-bottom: 4px; color: var(--text); }
+.toast-body { color: var(--muted); font-size: 10px; }
+
+/* ── Chart containers ──────────────────────────────────────────────────────── */
+.chart-box { position: relative; }
+
+/* ── Footer ────────────────────────────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 20px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="logo-block">
+    <div>
+      <div class="logo">Sentiment<span>IQ</span></div>
+      <div class="logo-sub">Product Review Analyzer</div>
+    </div>
+  </div>
+  <div class="header-center">
+    <span>Analyzing:</span>
+    <a class="product-link" href="mockshop_product.html" target="_blank">
+      ↗ MockShop — TechGo Pro Wireless Earbuds
+    </a>
+  </div>
+  <div class="live-pill">
+    <div class="live-dot"></div>
+    <span>LIVE</span>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- KPIs -->
+  <div class="section-label">Overview</div>
+  <div class="kpi-strip" id="kpiStrip">
+    <div class="kpi" id="kpiTotal">
+      <div class="kpi-label">Total Reviews</div>
+      <div class="kpi-val" id="vTotal">—</div>
+      <div class="kpi-sub">scraped + submitted</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Dominant Mood</div>
+      <div class="kpi-val" id="vDom" style="font-size:20px;padding-top:8px">—</div>
+      <div class="kpi-sub" id="vDomSub"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg Stars</div>
+      <div class="kpi-val" id="vStars">—</div>
+      <div class="kpi-sub">out of 5.0</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Positive</div>
+      <div class="kpi-val" id="vPos" style="color:var(--green)">—</div>
+      <div class="kpi-sub" id="vPosPct"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Negative</div>
+      <div class="kpi-val" id="vNeg" style="color:var(--red)">—</div>
+      <div class="kpi-sub" id="vNegPct"></div>
+    </div>
+  </div>
+
+  <!-- Sentiment bar -->
+  <div class="sent-bar-wrap">
+    <div class="sent-bar" id="sentBar"></div>
+    <div class="sent-legend" id="sentLegend"></div>
+  </div>
+
+  <!-- Alerts -->
+  <div class="alerts">
+    <div class="alert danger">
+      <div class="alert-num" id="vChurn">0</div>
+      <div>
+        <div class="alert-title">⚠ Churn Risk</div>
+        <div class="alert-body">Reviewers who explicitly stated they won't buy again. Requires immediate follow-up.</div>
+      </div>
+    </div>
+    <div class="alert warn">
+      <div class="alert-num" id="vEsc">0</div>
+      <div>
+        <div class="alert-title">🔺 Escalation Required</div>
+        <div class="alert-body">Legal or fraud signals detected (counterfeit, DTI, lawsuit). Flag for management.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div class="section-label">Analytics</div>
+  <div class="grid3" style="margin-bottom:16px">
+    <div class="card chart-box">
+      <div class="card-title">Sentiment Split</div>
+      <canvas id="donutChart" height="200"></canvas>
+    </div>
+    <div class="card chart-box">
+      <div class="card-title">Star Distribution</div>
+      <canvas id="starChart" height="200"></canvas>
+    </div>
+    <div class="card chart-box">
+      <div class="card-title">Sentiment × Stars</div>
+      <canvas id="stackedChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">Avg Dimensions</div>
+      <div id="dimBars"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Top Categories & Keywords</div>
+      <div style="margin-bottom:12px;font-size:9px;letter-spacing:2px;color:var(--muted)">CATEGORIES</div>
+      <div class="tags" id="catTags" style="margin-bottom:16px"></div>
+      <div style="margin-bottom:12px;font-size:9px;letter-spacing:2px;color:var(--muted)">KEYWORDS</div>
+      <div class="tags" id="kwTags"></div>
+    </div>
+  </div>
+
+  <!-- Review table -->
+  <div class="section-label">All Reviews</div>
+  <div class="table-wrap">
+    <div class="filter-row" id="filterRow">
+      <button class="filter-tab active" onclick="filterTable('all',this)">All</button>
+      <button class="filter-tab" onclick="filterTable('positive',this)">😊 Positive</button>
+      <button class="filter-tab" onclick="filterTable('negative',this)">😠 Negative</button>
+      <button class="filter-tab" onclick="filterTable('neutral',this)">😐 Neutral</button>
+      <button class="filter-tab" onclick="filterTable('mixed',this)">🎭 Mixed</button>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Sentiment</th>
+            <th>Stars</th>
+            <th>Conf.</th>
+            <th style="min-width:80px">Author</th>
+            <th style="min-width:280px">Review</th>
+            <th>Categories</th>
+            <th>Intent</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Comment form -->
+  <div class="section-label">Submit Your Review</div>
+  <div class="comment-form">
+    <div class="form-title">Add a Comment</div>
+    <div class="form-sub">Your review is analyzed instantly and updates the dashboard in real time.</div>
+
+    <div class="form-row">
+      <div>
+        <label>Your Name</label>
+        <input type="text" id="inputName" placeholder="e.g. Juan D."/>
+      </div>
+      <div>
+        <label>Variation</label>
+        <select id="inputVariation">
+          <option>Midnight Black</option>
+          <option>Pearl White</option>
+          <option>Navy Blue</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="star-label">Star Rating</div>
+    <div class="star-picker" id="starPicker">
+      <button class="star-btn" data-val="1" onclick="setStar(1)">★</button>
+      <button class="star-btn" data-val="2" onclick="setStar(2)">★</button>
+      <button class="star-btn" data-val="3" onclick="setStar(3)">★</button>
+      <button class="star-btn" data-val="4" onclick="setStar(4)">★</button>
+      <button class="star-btn" data-val="5" onclick="setStar(5)">★</button>
+    </div>
+
+    <div class="form-full">
+      <label>Your Review</label>
+      <textarea id="inputText" rows="4" placeholder="Write your honest review about the TechGo Pro Wireless Earbuds..."></textarea>
+    </div>
+
+    <div class="submit-row">
+      <button class="btn-submit" id="submitBtn" onclick="submitReview()">
+        ▶ Analyze & Submit
+      </button>
+      <div class="analyzing" id="analyzingEl">
+        <div class="spin"></div>
+        <span>ANALYZING...</span>
+      </div>
+      <span class="submit-note" id="submitNote"></span>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>SentimentIQ &nbsp;·&nbsp; VADER + TextBlob Ensemble &nbsp;·&nbsp; School Project Demo</span>
+  <span>
+    <a href="mockshop_product.html" target="_blank">↗ View MockShop Product Page</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com" target="_blank">↗ GitHub</a>
+  </span>
+</footer>
+
+<div class="toast" id="toast">
+  <div class="toast-title" id="toastTitle"></div>
+  <div class="toast-body"  id="toastBody"></div>
+</div>
+
+<script>
+'use strict';
+
+// ── VADER word lists (simplified but effective) ────────────────────────────────
+const VADER_POSITIVE = new Set([
+  'good','great','excellent','amazing','fantastic','wonderful','awesome','love',
+  'best','perfect','beautiful','nice','happy','glad','pleased','satisfied',
+  'recommend','recommend','sulit','legit','impressed','impressive','quality',
+  'fast','quick','clean','clear','solid','smooth','comfortable','easy','helpful',
+  'enjoy','enjoyed','worth','value','genuine','original','real','reliable',
+  'durable','strong','powerful','fresh','innovative','professional','efficient',
+  'brilliant','outstanding','superb','magnificent','delightful','safe','secure',
+  'effective','responsive','accurate','honest','fair','kind','generous','friendly'
+]);
+
+const VADER_NEGATIVE = new Set([
+  'bad','terrible','awful','horrible','worst','hate','poor','disappointed',
+  'fake','broken','defective','scam','fraud','counterfeit','knockoff',
+  'slow','late','damaged','missing','wrong','incorrect','false','lie','lied',
+  'useless','waste','overpriced','cheap','flimsy','plastic','ugly','loud',
+  'uncomfortable','difficult','hard','confusing','annoying','frustrating',
+  'rude','ignored','unresponsive','refused','denied','blocked','stuck',
+  'static','noise','crackling','lagging','disconnects','dies','stopped',
+  'avoid','warning','danger','illegal','stolen','lawsuit','complaint','report',
+  'dispute','refund','return','problem','issue','error','fault','fail','failed',
+  'never','nothing','useless','worthless','regret','regretted','sorry'
+]);
+
+const INTENSIFIERS   = new Set(['very','extremely','super','really','absolutely','completely','totally','so','quite','highly','incredibly','utterly']);
+const NEGATORS       = new Set(['not','no','never','nothing','nobody','nowhere','neither','nor','cannot','cant',"can't","won't","wouldn't","didn't","doesn't","don't","isn't","wasn't","aren't"]);
+const CHURN_SIGNALS  = ['never again',"won't buy",'will not return','last time','never buying','do not buy','avoid','stop buying'];
+const ESC_SIGNALS    = ['lawsuit','legal action','bbb','dti','report','fraud','scam','counterfeit','fake item','complaint','authorities','police'];
+
+const CATEGORIES = {
+  'Product Quality'     : ['quality','build','material','durable','broken','defective','well made','cheap','sturdy','flimsy','sound','battery','anc','noise','audio','earbuds','comfortable','fit'],
+  'Shipping & Delivery' : ['shipping','delivery','arrived','package','delayed','late','fast','slow','tracking','days','ship','sent','received'],
+  'Customer Service'    : ['customer service','support','seller','response','helpful','rude','ignored','contact','resolved','refund request','reply','chat'],
+  'Pricing & Value'     : ['price','value','expensive','cheap','worth','cost','affordable','overpriced','bargain','deal','money','sulit','budget'],
+  'Authenticity'        : ['fake','counterfeit','genuine','original','authentic','knockoff','real','replica','described'],
+  'Returns & Refunds'   : ['return','refund','exchange','sent back','return policy','money back','replacement','warranty','dispute'],
+  'Packaging'           : ['packaging','pack','unboxing','wrapped','box','protective','bag','presentation'],
+};
+
+// ── Core sentiment scorer ──────────────────────────────────────────────────────
+function scoreText(text, starRating = 0) {
+  const words   = text.toLowerCase().replace(/[^a-z0-9\s']/g, ' ').split(/\s+/).filter(Boolean);
+  let posScore  = 0, negScore = 0;
+  let prevNeg   = false;
+
+  for (let i = 0; i < words.length; i++) {
+    const w    = words[i];
+    const mult = INTENSIFIERS.has(words[i-1]) ? 1.5 : 1.0;
+
+    if (NEGATORS.has(w)) { prevNeg = true; continue; }
+
+    if (VADER_POSITIVE.has(w)) {
+      if (prevNeg) negScore += 0.8 * mult;
+      else         posScore += 1.0 * mult;
+    } else if (VADER_NEGATIVE.has(w)) {
+      if (prevNeg) posScore += 0.5 * mult;
+      else         negScore += 1.0 * mult;
+    }
+    // Caps boost
+    if (w === words[i].toUpperCase() && w.length > 2) {
+      if (VADER_POSITIVE.has(w.toLowerCase())) posScore += 0.5;
+      if (VADER_NEGATIVE.has(w.toLowerCase())) negScore += 0.5;
+    }
+    prevNeg = false;
+  }
+
+  // Exclamation boost
+  const excl = (text.match(/!/g) || []).length;
+  if (posScore > negScore) posScore += excl * 0.3;
+  else                     negScore += excl * 0.3;
+
+  // VADER compound (-1 to 1)
+  const total = posScore + negScore;
+  const vaderCompound = total === 0 ? 0 : (posScore - negScore) / Math.max(total, 1);
+
+  // Star rating signal (-1 to 1): maps 1→-1, 3→0, 5→1
+  const starSignal = starRating > 0 ? (starRating - 3) / 2 : 0;
+
+  // Ensemble: 65% VADER + 35% star
+  const ensemble = (0.65 * vaderCompound) + (0.35 * starSignal);
+  const clamped  = Math.max(-1, Math.min(1, ensemble));
+
+  // Disagree check (mixed)
+  const disagree = (vaderCompound > 0.2 && starSignal < -0.3) ||
+                   (vaderCompound < -0.2 && starSignal > 0.3);
+
+  let sentiment, emoji, confidence;
+  if (disagree) {
+    sentiment = 'mixed'; emoji = '🎭';
+    confidence = Math.round(50 + Math.abs(clamped) * 25);
+  } else if (clamped >= 0.15) {
+    sentiment = 'positive'; emoji = '😊';
+    confidence = Math.round(Math.min(98, 55 + clamped * 43));
+  } else if (clamped <= -0.15) {
+    sentiment = 'negative'; emoji = '😠';
+    confidence = Math.round(Math.min(98, 55 + Math.abs(clamped) * 43));
+  } else {
+    sentiment = 'neutral'; emoji = '😐';
+    confidence = Math.round(55 + (0.15 - Math.abs(clamped)) / 0.15 * 20);
+  }
+
+  // Dimensions
+  const churnHit = CHURN_SIGNALS.some(s => text.toLowerCase().includes(s));
+  const escHit   = ESC_SIGNALS.some(s  => text.toLowerCase().includes(s));
+  const urgencyW = ['immediately','asap','urgent','still waiting','unacceptable','weeks','!!'];
+  const urgency  = Math.min(100, urgencyW.filter(w => text.toLowerCase().includes(w)).length * 20 + (starRating <= 1 ? 25 : 0));
+  const frustration = Math.round(Math.max(0, Math.min(100, (-vaderCompound + 1) / 2 * 100)));
+  const satisfaction = Math.round(Math.max(0, Math.min(100, (vaderCompound + 1) / 2 * 100)));
+  const loyaltyRisk  = Math.min(100, (churnHit ? 50 : 0) + (escHit ? 40 : 0) + (starRating <= 2 ? 25 : 0));
+
+  // Categories
+  const textLower = text.toLowerCase();
+  const categories = Object.entries(CATEGORIES)
+    .filter(([, kws]) => kws.some(k => textLower.includes(k)))
+    .map(([cat]) => cat);
+  if (!categories.length) categories.push('General Feedback');
+
+  // Intents
+  const intents = [];
+  if (churnHit) intents.push('Churn Risk');
+  if (escHit)   intents.push('Escalation Required');
+  if (clamped > 0.5) intents.push('Praise');
+  if (clamped < -0.3) intents.push('General Complaint');
+  if (!intents.length) intents.push('Feedback Only');
+
+  // Keywords (top 6 non-stop words)
+  const STOP = new Set(['the','a','an','and','or','but','in','on','at','to','for','of','with','by','is','it','this','that','was','are','be','have','had','i','my','so','very','just','also','as','if','its','me','we','our','they','you','your','all','can','no','up','about','after','more','one','from','get','been','do','did','does','really','quite','even','than','then','what','when']);
+  const freq = {};
+  text.toLowerCase().replace(/[^a-z\s]/g,'').split(/\s+/).forEach(w => {
+    if (w.length > 3 && !STOP.has(w)) freq[w] = (freq[w]||0)+1;
+  });
+  const keywords = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,6).map(e=>e[0]);
+
+  return {
+    sentiment, emoji, confidence, ensemble: parseFloat(clamped.toFixed(3)),
+    vader: parseFloat(vaderCompound.toFixed(3)),
+    frustration, satisfaction, urgency, loyaltyRisk,
+    churnRisk: churnHit, escalation: escHit,
+    categories, intents, keywords,
+  };
+}
+
+// ── Seed data ─────────────────────────────────────────────────────────────────
+const SEED = [
+  {name:"Maria S.", rating:5, date:"2025-04-28", variation:"Midnight Black", text:"Grabe ang ganda ng sound quality! Legit seller, arrived in 2 days, well-packed. ANC feature works really well. Sulit na sulit for the price! Highly recommend sa lahat. Will definitely buy again from this shop."},
+  {name:"John R.",  rating:1, date:"2025-04-25", variation:"Pearl White",    text:"FAKE ITEM!!! Not original. Sound quality is terrible, nothing like the description. Left earbud stopped working after 3 days. Reported to Shopee and will file a dispute. Do NOT buy from this seller. Complete waste of money. Never buying here again."},
+  {name:"Kris L.",  rating:5, date:"2025-04-22", variation:"Navy Blue",      text:"Best budget earbuds I've tried! Battery life is impressive, lasts more than 30 hours with the case. Bluetooth connects instantly. Comfortable to wear for long periods. Arrived well-packaged with all accessories. 5 stars!"},
+  {name:"Ana P.",   rating:2, date:"2025-04-20", variation:"Midnight Black", text:"Disappointed. One earbud has static noise. Contacted the seller 5 times, no response. Return process is a nightmare. The packaging looked good but the product is clearly defective. Would not recommend until their customer service improves."},
+  {name:"Carlo M.", rating:5, date:"2025-04-18", variation:"Pearl White",    text:"Solid earbuds! Sound is clear, bass is punchy. The ANC actually works — tested it on the MRT and it blocked out most of the noise. Fast delivery, arrived in 1 day. Seller is legit. Highly recommend!"},
+  {name:"Bea T.",   rating:3, date:"2025-04-15", variation:"Navy Blue",      text:"Okay lang. Sound quality is decent but not amazing. Delivery took longer than expected — 8 days. Packaging was a bit damaged but the earbuds themselves were fine. For the price it's acceptable, but I expected better ANC."},
+  {name:"Rico V.",  rating:1, date:"2025-04-12", variation:"Midnight Black", text:"Scam! Item received is clearly a knockoff. Serial number doesn't match. Already filed a complaint with the DTI. This shop is selling counterfeit electronics. AVOID AT ALL COSTS."},
+  {name:"Lena G.",  rating:4, date:"2025-04-10", variation:"Pearl White",    text:"Really good earbuds for the price. Sound quality is great, fits comfortably. Only minor issue is the touch controls are a bit sensitive — sometimes accidentally pauses. But overall very satisfied with my purchase!"},
+  {name:"Dan F.",   rating:5, date:"2025-04-08", variation:"Midnight Black", text:"Sulit na sulit! Been using these for 2 weeks now and still going strong. ANC is surprisingly good for this price range. My go-to earbuds for commuting. Seller ships fast and packs items securely. Will buy the navy blue as gift."},
+  {name:"Nica H.",  rating:2, date:"2025-04-05", variation:"Navy Blue",      text:"Not worth the price. The earbuds fall out of my ears constantly and the bass is almost non-existent. Refund request was denied even though I returned within the window. Very disappointed with both the product and the seller's after-sales service."},
+  {name:"Jun B.",   rating:5, date:"2025-04-02", variation:"Midnight Black", text:"I've tried many earbuds in this price range and these are by far the best. Call quality is excellent, no complaints from the other end. Battery lasts the whole day. Will definitely repurchase. Fast shipping, item as described."},
+  {name:"Cel A.",   rating:4, date:"2025-03-30", variation:"Pearl White",    text:"Pretty good overall. Sound quality is nice, the ANC works well in quiet environments. Wish the case was a bit more durable — feels a bit plasticky. But for this price point I'm satisfied. Delivery was on time."},
+  {name:"Mark D.",  rating:1, date:"2025-03-27", variation:"Navy Blue",      text:"Received broken item. Right earbud won't charge. Seller is not responding to my messages. I have been waiting for a resolution for 2 weeks now. This is completely unacceptable. I am reporting this to consumer protection authorities."},
+  {name:"Rose N.",  rating:5, date:"2025-03-24", variation:"Midnight Black", text:"Amazing! Sound quality blew me away for the price. ANC is really effective. Fit is comfortable even after 3 hours of use. Packaging was great, like receiving a premium product. Seller ships super fast. 100% recommend!"},
+  {name:"Gio S.",   rating:3, date:"2025-03-20", variation:"Pearl White",    text:"Average product. Does the job but nothing special. Sound is okay. The ANC barely makes a difference in noisy environments. Delivery was fine, arrived in 3 days. Packaging decent. Might work better for someone with smaller ears."},
+  {name:"Tina P.",  rating:5, date:"2025-03-17", variation:"Navy Blue",      text:"Hands down the best budget earbuds I've ever bought! Crystal clear audio, super comfortable, and the battery literally lasts all day. Bought 2 — one for me and one as a gift. The recipient loves it too! Fast delivery, items well packed."},
+  {name:"Ken O.",   rating:2, date:"2025-03-14", variation:"Midnight Black", text:"Overpriced for what you get. ANC is basically non-existent in practice. Sound quality is mediocre. Tried returning but the process is too complicated. Won't buy again. There are better options available for the same price range."},
+  {name:"Mia C.",   rating:5, date:"2025-03-11", variation:"Pearl White",    text:"Love these earbuds! Perfect for my daily commute. Connects to my phone instantly, no lag. Sound is balanced and clear. Very comfortable for long use. The seller included a thank-you card which was a nice touch. A+ experience!"},
+  {name:"Leo V.",   rating:1, date:"2025-03-08", variation:"Navy Blue",      text:"WORST PURCHASE EVER. Item didn't match description at all. The earbuds I received look completely different from the photos. Battery dies after 2 hours not 36 as advertised. False advertising! Never again. Avoid this seller!"},
+  {name:"Joy M.",   rating:4, date:"2025-03-05", variation:"Midnight Black", text:"Very satisfied with this purchase! Sound quality is excellent, especially for music. The only downside is the touch controls are slightly tricky to learn. But once you get used to it, it's great. Fast shipping, good packaging."},
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let allReviews = SEED.map(r => ({...r, analyzed: scoreText(r.text, r.rating), isNew: false}));
+let currentFilter = 'all';
+let selectedStar  = 0;
+let donutChart, starChart, stackedChart;
+
+const COLORS = {
+  positive: '#22c55e', negative: '#ef4444',
+  neutral:  '#3b82f6', mixed:    '#f59e0b',
+};
+
+// ── Star picker ───────────────────────────────────────────────────────────────
+function setStar(n) {
+  selectedStar = n;
+  document.querySelectorAll('.star-btn').forEach((b,i) => {
+    b.classList.toggle('active', i < n);
+  });
+}
+
+// ── Aggregate ─────────────────────────────────────────────────────────────────
+function computeAgg() {
+  const total  = allReviews.length;
+  const dist   = {positive:0, negative:0, neutral:0, mixed:0};
+  const dims   = {urgency:0, frustration:0, satisfaction:0, loyalty_risk:0};
+  const catCnt = {};
+  const kwCnt  = {};
+  let starSum  = 0, confSum = 0, churnN = 0, escN = 0;
+
+  allReviews.forEach(({rating, analyzed: a}) => {
+    dist[a.sentiment]++;
+    dims.urgency      += a.urgency;
+    dims.frustration  += a.frustration;
+    dims.satisfaction += a.satisfaction;
+    dims.loyalty_risk += a.loyaltyRisk;
+    starSum  += rating;
+    confSum  += a.confidence;
+    if (a.churnRisk) churnN++;
+    if (a.escalation) escN++;
+    a.categories.forEach(c => catCnt[c] = (catCnt[c]||0)+1);
+    a.keywords.forEach(k  => kwCnt[k]  = (kwCnt[k] ||0)+1);
+  });
+
+  const dominant = Object.entries(dist).sort((a,b)=>b[1]-a[1])[0][0];
+  return {
+    total, dist, dominant,
+    avgStars:  parseFloat((starSum / total).toFixed(1)),
+    avgConf:   Math.round(confSum / total),
+    churnN, escN,
+    dims: Object.fromEntries(Object.entries(dims).map(([k,v])=>[k, Math.round(v/total)])),
+    topCats: Object.entries(catCnt).sort((a,b)=>b[1]-a[1]).slice(0,6),
+    topKws:  Object.entries(kwCnt).sort((a,b)=>b[1]-a[1]).slice(0,10),
+  };
+}
+
+// ── Render KPIs ───────────────────────────────────────────────────────────────
+function renderKPIs(agg) {
+  const {total, dist, dominant, avgStars, churnN, escN} = agg;
+  document.getElementById('vTotal').textContent = total;
+  document.getElementById('vDom').textContent   = dominant.toUpperCase();
+  document.getElementById('vDomSub').textContent = `${dist[dominant]} reviews`;
+  document.getElementById('vStars').textContent  = avgStars + ' ★';
+  document.getElementById('vPos').textContent    = dist.positive;
+  document.getElementById('vPosPct').textContent = pct(dist.positive, total) + '% of total';
+  document.getElementById('vNeg').textContent    = dist.negative;
+  document.getElementById('vNegPct').textContent = pct(dist.negative, total) + '% of total';
+  document.getElementById('vChurn').textContent  = churnN;
+  document.getElementById('vEsc').textContent    = escN;
+
+  document.querySelectorAll('.kpi').forEach(k => {
+    k.classList.add('loaded');
+  });
+}
+
+// ── Sentiment bar ─────────────────────────────────────────────────────────────
+function renderSentBar(dist, total) {
+  const bar    = document.getElementById('sentBar');
+  const legend = document.getElementById('sentLegend');
+  bar.innerHTML = ''; legend.innerHTML = '';
+  const emojis = {positive:'😊',negative:'😠',neutral:'😐',mixed:'🎭'};
+  Object.entries(dist).forEach(([s,n]) => {
+    if (!n) return;
+    const p = pct(n, total);
+    const seg = document.createElement('div');
+    seg.className = `sent-seg ${s}`;
+    seg.style.flex = p;
+    seg.textContent = p > 8 ? `${p}%` : '';
+    bar.appendChild(seg);
+    legend.innerHTML += `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[s]}"></div>${emojis[s]} ${s}: <strong>${n}</strong> (${p}%)</div>`;
+  });
+}
+
+// ── Charts ────────────────────────────────────────────────────────────────────
+const CHART_DEFAULTS = {
+  color: '#666',
+  plugins: { legend: { labels: { color:'#888', font:{family:'DM Mono',size:10} } } },
+};
+
+function initCharts(agg) {
+  Chart.defaults.color = '#666';
+
+  // Donut
+  const d = agg.dist;
+  donutChart = new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(d),
+      datasets: [{ data: Object.values(d),
+        backgroundColor: Object.keys(d).map(s=>COLORS[s]),
+        borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: { cutout:'65%', plugins: CHART_DEFAULTS.plugins },
+  });
+
+  // Star bar
+  const starCnts = [1,2,3,4,5].map(s => allReviews.filter(r=>r.rating===s).length);
+  starChart = new Chart(document.getElementById('starChart'), {
+    type: 'bar',
+    data: {
+      labels: ['1★','2★','3★','4★','5★'],
+      datasets: [{ data: starCnts,
+        backgroundColor: ['#ef4444','#fb923c','#f59e0b','#86efac','#22c55e'],
+        borderRadius: 2, borderSkipped: false }]
+    },
+    options: { plugins: { legend:{display:false} },
+      scales: { x:{ticks:{color:'#666',font:{family:'DM Mono',size:10}},grid:{color:'#1c1c1c'}},
+                y:{ticks:{color:'#666',font:{family:'DM Mono',size:10}},grid:{color:'#1c1c1c'}} } }
+  });
+
+  // Stacked
+  const sents = ['positive','negative','neutral','mixed'];
+  stackedChart = new Chart(document.getElementById('stackedChart'), {
+    type: 'bar',
+    data: {
+      labels: ['1★','2★','3★','4★','5★'],
+      datasets: sents.map(s => ({
+        label: s,
+        data: [1,2,3,4,5].map(star => allReviews.filter(r=>r.rating===star && r.analyzed.sentiment===s).length),
+        backgroundColor: COLORS[s], borderRadius: 2,
+      }))
+    },
+    options: { plugins: CHART_DEFAULTS.plugins,
+      scales: {
+        x:{stacked:true,ticks:{color:'#666',font:{family:'DM Mono',size:10}},grid:{color:'#1c1c1c'}},
+        y:{stacked:true,ticks:{color:'#666',font:{family:'DM Mono',size:10}},grid:{color:'#1c1c1c'}}
+      }
+    }
+  });
+}
+
+function updateCharts(agg) {
+  // Donut
+  const d = agg.dist;
+  donutChart.data.datasets[0].data = Object.values(d);
+  donutChart.update();
+
+  // Star
+  starChart.data.datasets[0].data = [1,2,3,4,5].map(s => allReviews.filter(r=>r.rating===s).length);
+  starChart.update();
+
+  // Stacked
+  const sents = ['positive','negative','neutral','mixed'];
+  stackedChart.data.datasets.forEach((ds, i) => {
+    ds.data = [1,2,3,4,5].map(star => allReviews.filter(r=>r.rating===star && r.analyzed.sentiment===sents[i]).length);
+  });
+  stackedChart.update();
+}
+
+// ── Dimension bars ────────────────────────────────────────────────────────────
+function renderDims(dims) {
+  const dimColors = {urgency:'#ef4444', frustration:'#fb923c', satisfaction:'#22c55e', loyalty_risk:'#a855f7'};
+  document.getElementById('dimBars').innerHTML = Object.entries(dims).map(([k,v]) => `
+    <div class="dim-row">
+      <div class="dim-top">
+        <span class="dim-name">${k.replace('_',' ')}</span>
+        <span class="dim-score" style="color:${dimColors[k]}">${v}%</span>
+      </div>
+      <div class="dim-track">
+        <div class="dim-fill" style="width:${v}%;background:${dimColors[k]}"></div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Tags ──────────────────────────────────────────────────────────────────────
+function renderTags(agg) {
+  document.getElementById('catTags').innerHTML = agg.topCats.map(([c,n])=>
+    `<span class="tag cat">${c} <span style="opacity:.5">(${n})</span></span>`).join('');
+  document.getElementById('kwTags').innerHTML = agg.topKws.map(([k])=>
+    `<span class="tag kw">#${k}</span>`).join('');
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+function renderTable(filter) {
+  currentFilter = filter;
+  const rows = filter==='all' ? allReviews : allReviews.filter(r=>r.analyzed.sentiment===filter);
+  const stars = n => '★'.repeat(n)+'☆'.repeat(5-n);
+  document.getElementById('tableBody').innerHTML = rows.map((r,i) => {
+    const a = r.analyzed;
+    return `
+    <tr class="${r.isNew?'new-review':''}">
+      <td><span class="badge ${a.sentiment}">${a.emoji} ${a.sentiment}</span></td>
+      <td><span class="stars">${stars(r.rating)}</span></td>
+      <td style="color:var(--muted)">${a.confidence}%</td>
+      <td style="white-space:nowrap">${r.name}</td>
+      <td style="color:#ccc;font-size:11px;max-width:300px">${r.text.substring(0,120)}${r.text.length>120?'…':''}</td>
+      <td>${a.categories.slice(0,2).map(c=>`<span class="cat-mini">${c}</span>`).join('')}</td>
+      <td style="color:var(--muted);font-size:10px;white-space:nowrap">${a.intents[0]||'—'}</td>
+      <td style="color:var(--muted);white-space:nowrap">${r.date}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTable(f, btn) {
+  document.querySelectorAll('.filter-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable(f);
+}
+
+// ── Submit ────────────────────────────────────────────────────────────────────
+function submitReview() {
+  const name      = document.getElementById('inputName').value.trim() || 'Anonymous';
+  const text      = document.getElementById('inputText').value.trim();
+  const variation = document.getElementById('inputVariation').value;
+
+  if (!text) { showNote('Please write your review first.'); return; }
+  if (selectedStar === 0) { showNote('Please select a star rating.'); return; }
+
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('analyzingEl').classList.add('show');
+  document.getElementById('submitNote').textContent = '';
+
+  // Simulate analysis delay for effect
+  setTimeout(() => {
+    const analyzed = scoreText(text, selectedStar);
+    const today    = new Date().toISOString().slice(0,10);
+
+    const newReview = {
+      name, rating: selectedStar, date: today,
+      variation, text, analyzed, isNew: true,
+    };
+    allReviews.unshift(newReview);
+
+    // Re-render everything
+    const agg = computeAgg();
+    renderKPIs(agg);
+    renderSentBar(agg.dist, agg.total);
+    updateCharts(agg);
+    renderDims(agg.dims);
+    renderTags(agg);
+    renderTable(currentFilter);
+
+    // Reset form
+    document.getElementById('inputName').value  = '';
+    document.getElementById('inputText').value  = '';
+    selectedStar = 0;
+    document.querySelectorAll('.star-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('analyzingEl').classList.remove('show');
+
+    // Toast
+    const em = {positive:'😊',negative:'😠',neutral:'😐',mixed:'🎭'};
+    showToast(
+      `${em[analyzed.sentiment]} ${analyzed.sentiment.toUpperCase()} — ${analyzed.confidence}% confidence`,
+      `Categories: ${analyzed.categories.slice(0,2).join(', ')}`
+    );
+
+    // Scroll to table
+    document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth', block:'start'});
+
+    // Remove new-review highlight after 3s
+    setTimeout(() => { newReview.isNew = false; renderTable(currentFilter); }, 3000);
+
+  }, 900);
+}
+
+function showNote(msg) {
+  document.getElementById('submitNote').textContent = msg;
+}
+
+function showToast(title, body) {
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastBody').textContent  = body;
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+function pct(n, t) { return t ? Math.round(n/t*100) : 0; }
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const agg = computeAgg();
+  renderKPIs(agg);
+  renderSentBar(agg.dist, agg.total);
+  initCharts(agg);
+  renderDims(agg.dims);
+  renderTags(agg);
+  renderTable('all');
+});
+</script>
+</body>
+</html>

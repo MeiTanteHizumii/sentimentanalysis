@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TechGo Pro Wireless Earbuds — MockShop PH</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',sans-serif;background:#f5f5f5;color:#222;font-size:14px}
+
+/* Nav */
+nav{background:#ee4d2d;padding:0 24px;height:56px;display:flex;align-items:center;gap:16px}
+.nav-logo{color:white;font-size:22px;font-weight:700;letter-spacing:-0.5px}
+.nav-logo span{color:#ffe066}
+.nav-search{flex:1;max-width:560px;display:flex}
+.nav-search input{flex:1;padding:8px 14px;border:none;font-size:13px;outline:none}
+.nav-search button{background:#f05d40;color:white;border:none;padding:0 20px;font-size:13px;cursor:pointer}
+.nav-right{margin-left:auto;display:flex;gap:20px;color:white;font-size:12px;align-items:center}
+
+/* Breadcrumb */
+.breadcrumb{padding:10px 24px;font-size:12px;color:#888;background:white;border-bottom:1px solid #e8e8e8}
+.breadcrumb a{color:#ee4d2d;text-decoration:none}
+
+/* Product section */
+.product-wrap{max-width:1200px;margin:16px auto;padding:0 16px;display:grid;grid-template-columns:460px 1fr;gap:16px}
+
+/* Images */
+.product-images{background:white;padding:20px}
+.main-img{width:100%;aspect-ratio:1;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:64px;margin-bottom:12px;border:1px solid #e8e8e8}
+.thumb-row{display:flex;gap:8px}
+.thumb{width:60px;height:60px;background:#f0f0f0;border:2px solid #ee4d2d;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer}
+
+/* Product info */
+.product-info{background:white;padding:24px}
+.product-badge{display:inline-block;background:#ee4d2d;color:white;font-size:10px;padding:2px 8px;border-radius:2px;margin-bottom:10px;font-weight:700;letter-spacing:1px}
+.product-name{font-size:18px;font-weight:500;line-height:1.4;margin-bottom:12px}
+.rating-row{display:flex;align-items:center;gap:16px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #f0f0f0}
+.rating-num{font-size:16px;color:#ee4d2d;font-weight:700;border-bottom:1px solid #ee4d2d}
+.stars-display{color:#ee4d2d;font-size:14px;letter-spacing:-1px}
+.rating-count{color:#888;font-size:13px}
+.sold-count{color:#888;font-size:13px;border-left:1px solid #e0e0e0;padding-left:16px}
+.price-row{background:#fff9f8;margin:-24px -24px 20px;padding:20px 24px}
+.price{font-size:28px;color:#ee4d2d;font-weight:300}
+.price-original{font-size:14px;color:#888;text-decoration:line-through;margin-left:8px}
+.discount-badge{background:#ee4d2d;color:white;font-size:11px;padding:2px 6px;border-radius:2px;margin-left:8px}
+.variation-label{font-size:12px;color:#888;margin-bottom:8px;margin-top:16px}
+.variations{display:flex;gap:8px;flex-wrap:wrap}
+.var-btn{border:1px solid #e0e0e0;padding:6px 14px;font-size:13px;cursor:pointer;background:white;border-radius:2px}
+.var-btn.active{border-color:#ee4d2d;color:#ee4d2d}
+.qty-row{display:flex;align-items:center;gap:16px;margin-top:20px}
+.qty-label{color:#888;font-size:13px;width:80px}
+.qty-control{display:flex;align-items:center;border:1px solid #e0e0e0}
+.qty-btn{width:32px;height:32px;border:none;background:white;cursor:pointer;font-size:16px;color:#555}
+.qty-input{width:48px;height:32px;border:none;border-left:1px solid #e0e0e0;border-right:1px solid #e0e0e0;text-align:center;font-size:13px}
+.action-row{display:flex;gap:12px;margin-top:24px}
+.btn-cart{flex:1;padding:12px;border:1px solid #ee4d2d;color:#ee4d2d;background:#fff4f2;font-size:14px;cursor:pointer;font-weight:500}
+.btn-buy{flex:1;padding:12px;background:#ee4d2d;color:white;border:none;font-size:14px;cursor:pointer;font-weight:500}
+.shop-row{display:flex;align-items:center;gap:16px;margin-top:20px;padding-top:20px;border-top:1px solid #f0f0f0}
+.shop-avatar{width:44px;height:44px;background:#ee4d2d;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
+.shop-name{font-weight:500;font-size:13px}
+.shop-meta{font-size:11px;color:#888;margin-top:2px}
+.btn-visit{border:1px solid #e0e0e0;padding:6px 14px;font-size:12px;background:white;cursor:pointer;margin-left:auto}
+
+/* Reviews section */
+.reviews-section{max-width:1200px;margin:16px auto 40px;padding:0 16px}
+.reviews-card{background:white;padding:24px}
+.section-title{font-size:16px;font-weight:500;margin-bottom:20px;color:#222}
+
+/* Rating summary */
+.rating-summary{display:flex;gap:40px;padding:20px;background:#fafafa;border:1px solid #f0f0f0;margin-bottom:24px;align-items:center}
+.rating-big{text-align:center}
+.rating-big-num{font-size:48px;color:#ee4d2d;font-weight:300;line-height:1}
+.rating-big-stars{color:#ee4d2d;font-size:18px;letter-spacing:-2px;margin:6px 0}
+.rating-big-out{font-size:12px;color:#888}
+.rating-bars{flex:1}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px;color:#555}
+.bar-label{width:36px;text-align:right;color:#ee4d2d;text-decoration:underline;cursor:pointer}
+.bar-track{flex:1;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;background:#ee4d2d;border-radius:4px}
+.bar-count{width:28px;color:#888}
+.filter-tabs{display:flex;gap:0;margin-bottom:20px;flex-wrap:wrap;gap:8px}
+.filter-tab{padding:6px 16px;border:1px solid #e0e0e0;background:white;font-size:13px;cursor:pointer;color:#555}
+.filter-tab.active{border-color:#ee4d2d;color:#ee4d2d;background:#fff4f2}
+
+/* Individual reviews */
+.review-list{border-top:1px solid #f0f0f0}
+.review-item{padding:20px 0;border-bottom:1px solid #f5f5f5;display:grid;grid-template-columns:160px 1fr;gap:20px}
+.reviewer-info{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px}
+.reviewer-avatar{width:36px;height:36px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:16px}
+.reviewer-name{font-size:12px;font-weight:500;color:#333}
+.reviewer-meta{font-size:11px;color:#aaa}
+.review-content{}
+.review-stars{color:#ee4d2d;font-size:13px;letter-spacing:-1px;margin-bottom:6px}
+.review-text{font-size:14px;color:#333;line-height:1.6;margin-bottom:8px}
+.review-variation{font-size:12px;color:#aaa;margin-bottom:8px}
+.review-date{font-size:12px;color:#aaa}
+.review-images{display:flex;gap:6px;margin-bottom:8px}
+.review-img{width:64px;height:64px;background:#f0f0f0;border:1px solid #e0e0e0;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer}
+.helpful-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.helpful-btn{border:1px solid #e0e0e0;background:white;padding:3px 10px;font-size:12px;color:#777;cursor:pointer;display:flex;align-items:center;gap:4px}
+.seller-reply{background:#f9f9f9;border-left:3px solid #ee4d2d;padding:12px;margin-top:10px;font-size:13px}
+.seller-reply-label{font-size:12px;font-weight:700;color:#ee4d2d;margin-bottom:4px}
+
+/* Pagination */
+.pagination{display:flex;justify-content:center;gap:4px;margin-top:24px}
+.page-btn{width:32px;height:32px;border:1px solid #e0e0e0;background:white;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.page-btn.active{background:#ee4d2d;color:white;border-color:#ee4d2d}
+
+/* Footer */
+footer{background:#f5f5f5;border-top:1px solid #e0e0e0;padding:20px 24px;text-align:center;font-size:12px;color:#999;margin-top:40px}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-logo">mock<span>shop</span></div>
+  <div class="nav-search">
+    <input type="text" placeholder="Search products..."/>
+    <button>🔍</button>
+  </div>
+  <div class="nav-right">
+    <span>📦 Orders</span>
+    <span>🛒 Cart (2)</span>
+    <span>👤 Account</span>
+  </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+  <a href="#">Home</a> &rsaquo; <a href="#">Electronics</a> &rsaquo; <a href="#">Audio</a> &rsaquo; TechGo Pro Wireless Earbuds
+</div>
+
+<!-- Product -->
+<div class="product-wrap">
+  <div class="product-images">
+    <div class="main-img">🎧</div>
+    <div class="thumb-row">
+      <div class="thumb">🎧</div>
+      <div class="thumb" style="border-color:#e0e0e0">📦</div>
+      <div class="thumb" style="border-color:#e0e0e0">🔋</div>
+      <div class="thumb" style="border-color:#e0e0e0">📱</div>
+    </div>
+  </div>
+
+  <div class="product-info">
+    <div class="product-badge">MALL</div>
+    <div class="product-name">TechGo Pro Wireless Earbuds — Active Noise Cancelling, 36H Battery, IPX5 Waterproof, Bluetooth 5.3</div>
+    <div class="price-row">
+      <div>
+        <span class="price">₱1,299</span>
+        <span class="price-original">₱2,499</span>
+        <span class="discount-badge">-48%</span>
+      </div>
+    </div>
+    <div class="rating-row">
+      <span class="rating-num">4.3</span>
+      <span class="stars-display">★★★★☆</span>
+      <span class="rating-count">1,284 ratings</span>
+      <span class="sold-count">8,492 sold</span>
+    </div>
+    <div class="variation-label">COLOR</div>
+    <div class="variations">
+      <button class="var-btn active">Midnight Black</button>
+      <button class="var-btn">Pearl White</button>
+      <button class="var-btn">Navy Blue</button>
+    </div>
+    <div class="qty-row">
+      <span class="qty-label">Quantity</span>
+      <div class="qty-control">
+        <button class="qty-btn">−</button>
+        <input class="qty-input" value="1" readonly/>
+        <button class="qty-btn">+</button>
+      </div>
+      <span style="color:#888;font-size:12px">482 pieces available</span>
+    </div>
+    <div class="action-row">
+      <button class="btn-cart">🛒 Add to Cart</button>
+      <button class="btn-buy">Buy Now</button>
+    </div>
+    <div class="shop-row">
+      <div class="shop-avatar">T</div>
+      <div>
+        <div class="shop-name">TechGo Official Store</div>
+        <div class="shop-meta">Active 5 minutes ago · 4.9 ★ · 12.4k followers</div>
+      </div>
+      <button class="btn-visit">Visit Shop</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reviews Section -->
+<div class="reviews-section">
+  <div class="reviews-card">
+    <div class="section-title">Product Ratings &amp; Reviews</div>
+
+    <!-- Rating summary -->
+    <div class="rating-summary">
+      <div class="rating-big">
+        <div class="rating-big-num">4.3</div>
+        <div class="rating-big-stars">★★★★☆</div>
+        <div class="rating-big-out">out of 5</div>
+      </div>
+      <div class="rating-bars">
+        <div class="bar-row"><span class="bar-label">5 ★</span><div class="bar-track"><div class="bar-fill" style="width:62%"></div></div><span class="bar-count">795</span></div>
+        <div class="bar-row"><span class="bar-label">4 ★</span><div class="bar-track"><div class="bar-fill" style="width:18%"></div></div><span class="bar-count">231</span></div>
+        <div class="bar-row"><span class="bar-label">3 ★</span><div class="bar-track"><div class="bar-fill" style="width:8%"></div></div><span class="bar-count">103</span></div>
+        <div class="bar-row"><span class="bar-label">2 ★</span><div class="bar-track"><div class="bar-fill" style="width:5%"></div></div><span class="bar-count">64</span></div>
+        <div class="bar-row"><span class="bar-label">1 ★</span><div class="bar-track"><div class="bar-fill" style="width:7%"></div></div><span class="bar-count">91</span></div>
+      </div>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="filterReviews('all',this)">All (1,284)</button>
+      <button class="filter-tab" onclick="filterReviews('5',this)">5 ★ (795)</button>
+      <button class="filter-tab" onclick="filterReviews('4',this)">4 ★ (231)</button>
+      <button class="filter-tab" onclick="filterReviews('3',this)">3 ★ (103)</button>
+      <button class="filter-tab" onclick="filterReviews('2',this)">2 ★ (64)</button>
+      <button class="filter-tab" onclick="filterReviews('1',this)">1 ★ (91)</button>
+      <button class="filter-tab" onclick="filterReviews('photo',this)">With Photo</button>
+    </div>
+
+    <!-- Review list -->
+    <div class="review-list" id="reviewList">
+    <div class="review-item" data-rating="5" data-id="1">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Maria S.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★★★★</div>
+        <div class="review-images"><div class="review-img">📸</div></div>
+        <div class="review-text">Grabe ang ganda ng sound quality! Legit seller, arrived in 2 days, well-packed. ANC feature works really well. Sulit na sulit for the price! Highly recommend sa lahat. Will definitely buy again from this shop.</div>
+        <div class="review-variation">Variation: Midnight Black</div>
+        <div class="review-date">2025-04-28</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 42</button>
+        </div>
+        <div class="seller-reply"><div class="seller-reply-label">Seller Response:</div>Thank you so much po! Glad you loved it 😊 —TechGo Team</div>
+      </div>
+    </div>
+    <div class="review-item" data-rating="1" data-id="2">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">John R.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★☆☆☆☆</div>
+        
+        <div class="review-text">FAKE ITEM!!! Not original. Sound quality is terrible, nothing like the description. Left earbud stopped working after 3 days. Reported to Shopee and will file a dispute. Do NOT buy from this seller. Complete waste of money. Never buying here again.</div>
+        <div class="review-variation">Variation: Pearl White</div>
+        <div class="review-date">2025-04-25</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 38</button>
+        </div>
+        
+      </div>
+    </div>
+    <div class="review-item" data-rating="5" data-id="3">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Kris L.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★★★★</div>
+        <div class="review-images"><div class="review-img">📸</div></div>
+        <div class="review-text">Best budget earbuds I've tried! Battery life is impressive, lasts more than 30 hours with the case. Bluetooth connects instantly. Comfortable to wear for long periods. Arrived well-packaged with all accessories. 5 stars!</div>
+        <div class="review-variation">Variation: Navy Blue</div>
+        <div class="review-date">2025-04-22</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 29</button>
+        </div>
+        <div class="seller-reply"><div class="seller-reply-label">Seller Response:</div>Salamat po! Enjoy your earbuds! 🎶</div>
+      </div>
+    </div>
+    <div class="review-item" data-rating="2" data-id="4">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Ana P.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★☆☆☆</div>
+        
+        <div class="review-text">Disappointed. One earbud has static noise. Contacted the seller 5 times, no response. Return process is a nightmare. The packaging looked good but the product is clearly defective. Would not recommend until their customer service improves.</div>
+        <div class="review-variation">Variation: Midnight Black</div>
+        <div class="review-date">2025-04-20</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 21</button>
+        </div>
+        
+      </div>
+    </div>
+    <div class="review-item" data-rating="5" data-id="5">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Carlo M.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★★★★</div>
+        <div class="review-images"><div class="review-img">📸</div></div>
+        <div class="review-text">Solid earbuds! Sound is clear, bass is punchy. The ANC actually works — tested it on the MRT and it blocked out most of the noise. Fast delivery, arrived in 1 day. Seller is legit. Highly recommend!</div>
+        <div class="review-variation">Variation: Pearl White</div>
+        <div class="review-date">2025-04-18</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 55</button>
+        </div>
+        <div class="seller-reply"><div class="seller-reply-label">Seller Response:</div>Wow thank you po for the kind words! 🙏</div>
+      </div>
+    </div>
+    <div class="review-item" data-rating="3" data-id="6">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Bea T.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★★☆☆</div>
+        
+        <div class="review-text">Okay lang. Sound quality is decent but not amazing. Delivery took longer than expected — 8 days. Packaging was a bit damaged but the earbuds themselves were fine. For the price it's acceptable, but I expected better ANC.</div>
+        <div class="review-variation">Variation: Navy Blue</div>
+        <div class="review-date">2025-04-15</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 8</button>
+        </div>
+        
+      </div>
+    </div>
+    <div class="review-item" data-rating="1" data-id="7">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Rico V.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★☆☆☆☆</div>
+        
+        <div class="review-text">Scam! Item received is clearly a knockoff. Serial number doesn't match. Already filed a complaint with the DTI. This shop is selling counterfeit electronics. AVOID AT ALL COSTS.</div>
+        <div class="review-variation">Variation: Midnight Black</div>
+        <div class="review-date">2025-04-12</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 67</button>
+        </div>
+        
+      </div>
+    </div>
+    <div class="review-item" data-rating="4" data-id="8">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Lena G.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★★★☆</div>
+        <div class="review-images"><div class="review-img">📸</div></div>
+        <div class="review-text">Really good earbuds for the price. Sound quality is great, fits comfortably. Only minor issue is the touch controls are a bit sensitive — sometimes accidentally pauses. But overall very satisfied with my purchase!</div>
+        <div class="review-variation">Variation: Pearl White</div>
+        <div class="review-date">2025-04-10</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 14</button>
+        </div>
+        <div class="seller-reply"><div class="seller-reply-label">Seller Response:</div>Thanks for the honest feedback! We'll note that on the touch controls 😊</div>
+      </div>
+    </div>
+    <div class="review-item" data-rating="5" data-id="9">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Dan F.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★★★★</div>
+        
+        <div class="review-text">Sulit na sulit! Been using these for 2 weeks now and still going strong. ANC is surprisingly good for this price range. My go-to earbuds for commuting. Seller ships fast and packs items securely. Will buy the navy blue as gift.</div>
+        <div class="review-variation">Variation: Midnight Black</div>
+        <div class="review-date">2025-04-08</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 19</button>
+        </div>
+        <div class="seller-reply"><div class="seller-reply-label">Seller Response:</div>Thank you po! See you next purchase 😊</div>
+      </div>
+    </div>
+    <div class="review-item" data-rating="2" data-id="10">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Nica H.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★☆☆☆</div>
+        
+        <div class="review-text">Not worth the price. The earbuds fall out of my ears constantly and the bass is almost non-existent. Refund request was denied even though I returned within the window. Very disappointed with both the product and the seller's after-sales service.</div>
+        <div class="review-variation">Variation: Navy Blue</div>
+        <div class="review-date">2025-04-05</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 11</button>
+        </div>
+        
+      </div>
+    </div>
+    <div class="review-item" data-rating="5" data-id="11">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Jun B.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★★★★</div>
+        <div class="review-images"><div class="review-img">📸</div></div>
+        <div class="review-text">I've tried many earbuds in this price range and these are by far the best. Call quality is excellent, no complaints from the other end. Battery lasts the whole day. Will definitely repurchase. Fast shipping, item as described.</div>
+        <div class="review-variation">Variation: Midnight Black</div>
+        <div class="review-date">2025-04-02</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 33</button>
+        </div>
+        <div class="seller-reply"><div class="seller-reply-label">Seller Response:</div>So happy to hear that po! 🎉</div>
+      </div>
+    </div>
+    <div class="review-item" data-rating="4" data-id="12">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Cel A.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★★★☆</div>
+        
+        <div class="review-text">Pretty good overall. Sound quality is nice, the ANC works well in quiet environments. Wish the case was a bit more durable — feels a bit plasticky. But for this price point I'm satisfied. Delivery was on time.</div>
+        <div class="review-variation">Variation: Pearl White</div>
+        <div class="review-date">2025-03-30</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 7</button>
+        </div>
+        
+      </div>
+    </div>
+    <div class="review-item" data-rating="1" data-id="13">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Mark D.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★☆☆☆☆</div>
+        <div class="review-images"><div class="review-img">📸</div></div>
+        <div class="review-text">Received broken item. Right earbud won't charge. Seller is not responding to my messages. I have been waiting for a resolution for 2 weeks now. This is completely unacceptable. I am reporting this to consumer protection authorities.</div>
+        <div class="review-variation">Variation: Navy Blue</div>
+        <div class="review-date">2025-03-27</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 45</button>
+        </div>
+        
+      </div>
+    </div>
+    <div class="review-item" data-rating="5" data-id="14">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Rose N.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★★★★</div>
+        
+        <div class="review-text">Amazing! Sound quality blew me away for the price. ANC is really effective. Fit is comfortable even after 3 hours of use. Packaging was great, like receiving a premium product. Seller ships super fast. 100% recommend!</div>
+        <div class="review-variation">Variation: Midnight Black</div>
+        <div class="review-date">2025-03-24</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 22</button>
+        </div>
+        <div class="seller-reply"><div class="seller-reply-label">Seller Response:</div>You made our day! Thank you! ❤️</div>
+      </div>
+    </div>
+    <div class="review-item" data-rating="3" data-id="15">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Gio S.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★★☆☆</div>
+        
+        <div class="review-text">Average product. Does the job but nothing special. Sound is okay. The ANC barely makes a difference in noisy environments. Delivery was fine, arrived in 3 days. Packaging decent. Might work better for someone with smaller ears.</div>
+        <div class="review-variation">Variation: Pearl White</div>
+        <div class="review-date">2025-03-20</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 4</button>
+        </div>
+        
+      </div>
+    </div>
+    <div class="review-item" data-rating="5" data-id="16">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Tina P.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★★★★</div>
+        <div class="review-images"><div class="review-img">📸</div></div>
+        <div class="review-text">Hands down the best budget earbuds I've ever bought! Crystal clear audio, super comfortable, and the battery literally lasts all day. Bought 2 — one for me and one as a gift. The recipient loves it too! Fast delivery, items well packed.</div>
+        <div class="review-variation">Variation: Navy Blue</div>
+        <div class="review-date">2025-03-17</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 51</button>
+        </div>
+        <div class="seller-reply"><div class="seller-reply-label">Seller Response:</div>So sweet! Salamat po! 💙</div>
+      </div>
+    </div>
+    <div class="review-item" data-rating="2" data-id="17">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Ken O.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★☆☆☆</div>
+        
+        <div class="review-text">Overpriced for what you get. ANC is basically non-existent in practice. Sound quality is mediocre. Tried returning but the process is too complicated. Won't buy again. There are better options available for the same price range.</div>
+        <div class="review-variation">Variation: Midnight Black</div>
+        <div class="review-date">2025-03-14</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 9</button>
+        </div>
+        
+      </div>
+    </div>
+    <div class="review-item" data-rating="5" data-id="18">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Mia C.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★★★★</div>
+        
+        <div class="review-text">Love these earbuds! Perfect for my daily commute. Connects to my phone instantly, no lag. Sound is balanced and clear. Very comfortable for long use. The seller included a thank-you card which was a nice touch. A+ experience!</div>
+        <div class="review-variation">Variation: Pearl White</div>
+        <div class="review-date">2025-03-11</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 17</button>
+        </div>
+        <div class="seller-reply"><div class="seller-reply-label">Seller Response:</div>Aww that's so sweet to hear! 🥰 —TechGo Team</div>
+      </div>
+    </div>
+    <div class="review-item" data-rating="1" data-id="19">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Leo V.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★☆☆☆☆</div>
+        <div class="review-images"><div class="review-img">📸</div></div>
+        <div class="review-text">WORST PURCHASE EVER. Item didn't match description at all. The earbuds I received look completely different from the photos. Battery dies after 2 hours not 36 as advertised. False advertising! Never again. Avoid this seller!</div>
+        <div class="review-variation">Variation: Navy Blue</div>
+        <div class="review-date">2025-03-08</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 73</button>
+        </div>
+        
+      </div>
+    </div>
+    <div class="review-item" data-rating="4" data-id="20">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">👤</div>
+        <div class="reviewer-name">Joy M.</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">★★★★☆</div>
+        
+        <div class="review-text">Very satisfied with this purchase! Sound quality is excellent, especially for music. The only downside is the touch controls are slightly tricky to learn. But once you get used to it, it's great. Fast shipping, good packaging.</div>
+        <div class="review-variation">Variation: Midnight Black</div>
+        <div class="review-date">2025-03-05</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 13</button>
+        </div>
+        <div class="seller-reply"><div class="seller-reply-label">Seller Response:</div>Thank you po! 😊 Touch controls do take a bit of getting used to!</div>
+      </div>
+    </div></div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <button class="page-btn">›</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  MockShop PH &nbsp;·&nbsp; This is a demo page for school/testing purposes only &nbsp;·&nbsp; Not affiliated with Shopee
+</footer>
+
+<script>
+const ALL_REVIEWS = [
+  { id:1, name:"Maria S.", avatar:"👩", rating:5, date:"2025-04-28", variation:"Midnight Black", text:"Grabe ang ganda ng sound quality! Legit seller, arrived in 2 days, well-packed. ANC feature works really well. Sulit na sulit for the price! Highly recommend sa lahat. Will definitely buy again from this shop.", hasPhoto:true, helpful:42, reply:"Thank you so much po! Glad you loved it 😊 —TechGo Team" },
+  { id:2, name:"John R.", avatar:"👨", rating:1, date:"2025-04-25", variation:"Pearl White", text:"FAKE ITEM!!! Not original. Sound quality is terrible, nothing like the description. Left earbud stopped working after 3 days. Reported to Shopee and will file a dispute. Do NOT buy from this seller. Complete waste of money. Never buying here again.", hasPhoto:false, helpful:38, reply:null },
+  { id:3, name:"Kris L.", avatar:"🧑", rating:5, date:"2025-04-22", variation:"Navy Blue", text:"Best budget earbuds I've tried! Battery life is impressive, lasts more than 30 hours with the case. Bluetooth connects instantly. Comfortable to wear for long periods. Arrived well-packaged with all accessories. 5 stars!", hasPhoto:true, helpful:29, reply:"Salamat po! Enjoy your earbuds! 🎶" },
+  { id:4, name:"Ana P.", avatar:"👩", rating:2, date:"2025-04-20", variation:"Midnight Black", text:"Disappointed. One earbud has static noise. Contacted the seller 5 times, no response. Return process is a nightmare. The packaging looked good but the product is clearly defective. Would not recommend until their customer service improves.", hasPhoto:false, helpful:21, reply:null },
+  { id:5, name:"Carlo M.", avatar:"👨", rating:5, date:"2025-04-18", variation:"Pearl White", text:"Solid earbuds! Sound is clear, bass is punchy. The ANC actually works — tested it on the MRT and it blocked out most of the noise. Fast delivery, arrived in 1 day. Seller is legit. Highly recommend!", hasPhoto:true, helpful:55, reply:"Wow thank you po for the kind words! 🙏" },
+  { id:6, name:"Bea T.", avatar:"👩", rating:3, date:"2025-04-15", variation:"Navy Blue", text:"Okay lang. Sound quality is decent but not amazing. Delivery took longer than expected — 8 days. Packaging was a bit damaged but the earbuds themselves were fine. For the price it's acceptable, but I expected better ANC.", hasPhoto:false, helpful:8, reply:null },
+  { id:7, name:"Rico V.", avatar:"👨", rating:1, date:"2025-04-12", variation:"Midnight Black", text:"Scam! Item received is clearly a knockoff. Serial number doesn't match. Already filed a complaint with the DTI. This shop is selling counterfeit electronics. AVOID AT ALL COSTS.", hasPhoto:false, helpful:67, reply:null },
+  { id:8, name:"Lena G.", avatar:"👩", rating:4, date:"2025-04-10", variation:"Pearl White", text:"Really good earbuds for the price. Sound quality is great, fits comfortably. Only minor issue is the touch controls are a bit sensitive — sometimes accidentally pauses. But overall very satisfied with my purchase!", hasPhoto:true, helpful:14, reply:"Thanks for the honest feedback! We'll note that on the touch controls 😊" },
+  { id:9, name:"Dan F.", avatar:"👨", rating:5, date:"2025-04-08", variation:"Midnight Black", text:"Sulit na sulit! Been using these for 2 weeks now and still going strong. ANC is surprisingly good for this price range. My go-to earbuds for commuting. Seller ships fast and packs items securely. Will buy the navy blue as gift.", hasPhoto:false, helpful:19, reply:"Thank you po! See you next purchase 😊" },
+  { id:10, name:"Nica H.", avatar:"👩", rating:2, date:"2025-04-05", variation:"Navy Blue", text:"Not worth the price. The earbuds fall out of my ears constantly and the bass is almost non-existent. Refund request was denied even though I returned within the window. Very disappointed with both the product and the seller's after-sales service.", hasPhoto:false, helpful:11, reply:null },
+  { id:11, name:"Jun B.", avatar:"👨", rating:5, date:"2025-04-02", variation:"Midnight Black", text:"I've tried many earbuds in this price range and these are by far the best. Call quality is excellent, no complaints from the other end. Battery lasts the whole day. Will definitely repurchase. Fast shipping, item as described.", hasPhoto:true, helpful:33, reply:"So happy to hear that po! 🎉" },
+  { id:12, name:"Cel A.", avatar:"👩", rating:4, date:"2025-03-30", variation:"Pearl White", text:"Pretty good overall. Sound quality is nice, the ANC works well in quiet environments. Wish the case was a bit more durable — feels a bit plasticky. But for this price point I'm satisfied. Delivery was on time.", hasPhoto:false, helpful:7, reply:null },
+  { id:13, name:"Mark D.", avatar:"👨", rating:1, date:"2025-03-27", variation:"Navy Blue", text:"Received broken item. Right earbud won't charge. Seller is not responding to my messages. I have been waiting for a resolution for 2 weeks now. This is completely unacceptable. I am reporting this to consumer protection authorities.", hasPhoto:true, helpful:45, reply:null },
+  { id:14, name:"Rose N.", avatar:"👩", rating:5, date:"2025-03-24", variation:"Midnight Black", text:"Amazing! Sound quality blew me away for the price. ANC is really effective. Fit is comfortable even after 3 hours of use. Packaging was great, like receiving a premium product. Seller ships super fast. 100% recommend!", hasPhoto:false, helpful:22, reply:"You made our day! Thank you! ❤️" },
+  { id:15, name:"Gio S.", avatar:"👨", rating:3, date:"2025-03-20", variation:"Pearl White", text:"Average product. Does the job but nothing special. Sound is okay. The ANC barely makes a difference in noisy environments. Delivery was fine, arrived in 3 days. Packaging decent. Might work better for someone with smaller ears.", hasPhoto:false, helpful:4, reply:null },
+  { id:16, name:"Tina P.", avatar:"👩", rating:5, date:"2025-03-17", variation:"Navy Blue", text:"Hands down the best budget earbuds I've ever bought! Crystal clear audio, super comfortable, and the battery literally lasts all day. Bought 2 — one for me and one as a gift. The recipient loves it too! Fast delivery, items well packed.", hasPhoto:true, helpful:51, reply:"So sweet! Salamat po! 💙" },
+  { id:17, name:"Ken O.", avatar:"👨", rating:2, date:"2025-03-14", variation:"Midnight Black", text:"Overpriced for what you get. ANC is basically non-existent in practice. Sound quality is mediocre. Tried returning but the process is too complicated. Won't buy again. There are better options available for the same price range.", hasPhoto:false, helpful:9, reply:null },
+  { id:18, name:"Mia C.", avatar:"👩", rating:5, date:"2025-03-11", variation:"Pearl White", text:"Love these earbuds! Perfect for my daily commute. Connects to my phone instantly, no lag. Sound is balanced and clear. Very comfortable for long use. The seller included a thank-you card which was a nice touch. A+ experience!", hasPhoto:false, helpful:17, reply:"Aww that's so sweet to hear! 🥰 —TechGo Team" },
+  { id:19, name:"Leo V.", avatar:"👨", rating:1, date:"2025-03-08", variation:"Navy Blue", text:"WORST PURCHASE EVER. Item didn't match description at all. The earbuds I received look completely different from the photos. Battery dies after 2 hours not 36 as advertised. False advertising! Never again. Avoid this seller!", hasPhoto:true, helpful:73, reply:null },
+  { id:20, name:"Joy M.", avatar:"👩", rating:4, date:"2025-03-05", variation:"Midnight Black", text:"Very satisfied with this purchase! Sound quality is excellent, especially for music. The only downside is the touch controls are slightly tricky to learn. But once you get used to it, it's great. Fast shipping, good packaging.", hasPhoto:false, helpful:13, reply:"Thank you po! 😊 Touch controls do take a bit of getting used to!" },
+];
+
+let currentFilter = 'all';
+
+function stars(n) {
+  return '★'.repeat(n) + '☆'.repeat(5-n);
+}
+
+function renderReviews(filter) {
+  const list = document.getElementById('reviewList');
+  const filtered = filter === 'all' ? ALL_REVIEWS
+    : filter === 'photo' ? ALL_REVIEWS.filter(r => r.hasPhoto)
+    : ALL_REVIEWS.filter(r => r.rating === parseInt(filter));
+
+  list.innerHTML = filtered.map(r => `
+    <div class="review-item" data-rating="${r.rating}" data-id="${r.id}">
+      <div class="reviewer-info">
+        <div class="reviewer-avatar">${r.avatar}</div>
+        <div class="reviewer-name">${r.name}</div>
+        <div class="reviewer-meta">Verified Purchase</div>
+      </div>
+      <div class="review-content">
+        <div class="review-stars">${stars(r.rating)}</div>
+        ${r.hasPhoto ? `<div class="review-images"><div class="review-img">📸</div>${r.hasPhoto && r.rating > 3 ? '<div class="review-img">📸</div>' : ''}</div>` : ''}
+        <div class="review-text">${r.text}</div>
+        <div class="review-variation">Variation: ${r.variation}</div>
+        <div class="review-date">${r.date}</div>
+        <div class="helpful-row">
+          <span style="font-size:12px;color:#aaa">Helpful?</span>
+          <button class="helpful-btn">👍 ${r.helpful}</button>
+          <button class="helpful-btn">👎</button>
+        </div>
+        ${r.reply ? `<div class="seller-reply"><div class="seller-reply-label">Seller Response:</div>${r.reply}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterReviews(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderReviews(filter);
+}
+
+renderReviews('all');
+</script>
+</body>
+</html>
