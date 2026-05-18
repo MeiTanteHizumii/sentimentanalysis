@@ -20,31 +20,6 @@
 
 ---
 
-## 🚀 Publishing to GitHub Pages (3 steps)
-
-### Step 1 — Create a GitHub repository
-1. Go to [github.com](https://github.com) → **New repository**
-2. Name it `sentimentiq`
-3. Set it to **Public**
-4. Click **Create repository**
-
-### Step 2 — Upload the files
-1. Click **Add file → Upload files**
-2. Upload all three files:
-   - `index.html`
-   - `mockshop_product.html`
-   - `SentimentIQ_MockShop.ipynb`
-3. Click **Commit changes**
-
-### Step 3 — Enable GitHub Pages
-1. Go to **Settings → Pages**
-2. Under **Source**, select **Deploy from a branch**
-3. Branch: `main` | Folder: `/ (root)`
-4. Click **Save**
-5. Wait ~60 seconds, then visit:
-   `https://YOUR-USERNAME.github.io/sentimentiq/`
-
----
 
 ## 🧠 How the Sentiment Engine Works
 
