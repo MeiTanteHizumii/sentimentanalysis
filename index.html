@@ -6,6 +6,39 @@
 <title>SentimentIQ — MockShop Review Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- Firebase -->
+<script type="module">
+import { initializeApp }              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection,
+         addDoc, onSnapshot,
+         serverTimestamp, query,
+         orderBy }                    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyB91TWksL4X60dena297YxDPoU7e_BRROw",
+  authDomain:        "sentimentiq-99650.firebaseapp.com",
+  projectId:         "sentimentiq-99650",
+  storageBucket:     "sentimentiq-99650.firebasestorage.app",
+  messagingSenderId: "217138788225",
+  appId:             "1:217138788225:web:5618cf699ebe051c6c9a80",
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// Expose to global scope so non-module scripts can call them
+window._fbDb         = db;
+window._fbCollection = collection;
+window._fbAddDoc     = addDoc;
+window._fbQuery      = query;
+window._fbOrderBy    = orderBy;
+window._fbOnSnapshot = onSnapshot;
+window._fbTimestamp  = serverTimestamp;
+window._fbReady      = true;
+
+// Notify dashboard that Firebase is ready
+window.dispatchEvent(new Event('firebaseReady'));
+</script>
 <style>
 /* ── Reset & Variables ─────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1297,7 +1330,7 @@ function filterTable(f, btn) {
 }
 
 // ── Submit ────────────────────────────────────────────────────────────────────
-function submitReview() {
+async function submitReview() {
   const name      = document.getElementById('inputName').value.trim() || 'Anonymous';
   const text      = document.getElementById('inputText').value.trim();
   const variation = document.getElementById('inputVariation').value;
@@ -1320,19 +1353,13 @@ function submitReview() {
       variation, text, analyzed, isNew: true,
       fromMockShop: false,
     };
-    // Save to localStorage so MockShop page also shows it
-    try {
-      const saved = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-      saved.unshift({
-        id: newReview._id || Date.now(),
-        name: newReview.name, rating: newReview.rating,
-        date: newReview.date, variation: newReview.variation,
-        text: newReview.text, hasPhoto: false, helpful: 0,
-        reply: null, fromUser: true,
-      });
-      localStorage.setItem(LS_KEY, JSON.stringify(saved));
-    } catch(e) {}
-    allReviews.unshift(newReview);
+    // Save to Firebase — syncs to everyone
+    await saveToFirebase({
+      name: newReview.name, rating: newReview.rating,
+      date: newReview.date, variation: newReview.variation,
+      text: newReview.text,
+    });
+    // Firebase listener will add it to allReviews automatically
 
     // Re-render everything
     const agg = computeAgg();
@@ -1381,101 +1408,118 @@ function showToast(title, body) {
 
 function pct(n, t) { return t ? Math.round(n/t*100) : 0; }
 
-// ── localStorage key (shared with mockshop_product.html) ─────────────────────
-const LS_KEY = 'sentimentiq_user_reviews';
+// ── Firebase integration ──────────────────────────────────────────────────────
+const FIREBASE_IDS = new Set(); // track IDs already in allReviews
 
-function loadUserReviews() {
-  try {
-    const saved = localStorage.getItem(LS_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch(e) { return []; }
-}
-
-// ── Merge localStorage reviews into allReviews ────────────────────────────────
-function mergeUserReviews() {
-  const userRevs = loadUserReviews();
-  if (!userRevs.length) return 0;
-
-  // Avoid duplicates by id
-  const existingIds = new Set(allReviews.map(r => r._id));
-  let added = 0;
-  userRevs.forEach(r => {
-    const uid = String(r.id);
-    if (!existingIds.has(uid)) {
-      allReviews.unshift({
-        name      : r.name,
-        rating    : r.rating,
-        date      : r.date,
-        variation : r.variation,
-        text      : r.text,
-        analyzed  : scoreText(r.text, r.rating),
-        isNew     : false,
-        _id       : uid,
-        fromMockShop: true,
-      });
-      existingIds.add(uid);
-      added++;
-    }
-  });
-  return added;
-}
-
-// ── Poll localStorage every 3 seconds for new reviews ────────────────────────
-function startPolling() {
-  let lastCount = loadUserReviews().length;
-
-  setInterval(() => {
-    const current = loadUserReviews();
-    if (current.length !== lastCount) {
-      const added = mergeUserReviews();
-      if (added > 0) {
-        lastCount = current.length;
-        const agg = computeAgg();
-        renderKPIs(agg);
-        renderSentBar(agg.dist, agg.total);
-        updateCharts(agg);
-        renderDims(agg.dims);
-        renderTags(agg);
-        renderTable(currentFilter);
-        updateSyncBanner();
-        showToast(
-          `📬 ${added} new review${added>1?'s':''} from MockShop!`,
-          'Dashboard updated with latest sentiment data.'
-        );
-      }
-    }
-  }, 3000);
-}
-
-function updateSyncBanner() {
-  const userRevs = loadUserReviews();
-  const banner   = document.getElementById('syncBanner');
-  const text     = document.getElementById('syncBannerText');
-  if (userRevs.length > 0) {
+function updateSyncBanner(count, names) {
+  const banner = document.getElementById('syncBanner');
+  const text   = document.getElementById('syncBannerText');
+  if (count > 0) {
     banner.classList.add('show');
-    const names = [...new Set(userRevs.map(r => r.name))].slice(0,3).join(', ');
-    text.textContent = `${userRevs.length} review${userRevs.length>1?'s':''} synced from MockShop · Latest by ${names}`;
+    text.textContent = `${count} review${count>1?'s':''} live from all users · Latest: ${names}`;
   } else {
     banner.classList.remove('show');
   }
 }
 
+function startFirebaseListener() {
+  const db  = window._fbDb;
+  const col = window._fbCollection(db, 'reviews');
+  const q   = window._fbQuery(col, window._fbOrderBy('createdAt', 'desc'));
+
+  window._fbOnSnapshot(q, (snapshot) => {
+    let addedCount = 0;
+
+    snapshot.docChanges().forEach(change => {
+      if (change.type === 'added') {
+        const d   = change.doc.data();
+        const uid = change.doc.id;
+
+        if (FIREBASE_IDS.has(uid)) return; // already have it
+        FIREBASE_IDS.add(uid);
+
+        const isFirstLoad = addedCount === 0 && snapshot.docChanges().length > 1;
+
+        allReviews.unshift({
+          _id       : uid,
+          name      : d.name      || 'Anonymous',
+          rating    : d.rating    || 3,
+          date      : d.date      || new Date().toISOString().slice(0,10),
+          variation : d.variation || '',
+          text      : d.text      || '',
+          analyzed  : scoreText(d.text || '', d.rating || 3),
+          isNew     : !isFirstLoad,
+          fromFirebase: true,
+        });
+        addedCount++;
+      }
+    });
+
+    if (addedCount > 0) {
+      // Re-sort: seed reviews stay at bottom, Firebase reviews at top by date
+      const firebaseRevs = allReviews.filter(r => r.fromFirebase);
+      const seedRevs     = allReviews.filter(r => !r.fromFirebase);
+      allReviews.length  = 0;
+      allReviews.push(...firebaseRevs, ...seedRevs);
+
+      const agg = computeAgg();
+      renderKPIs(agg);
+      renderSentBar(agg.dist, agg.total);
+      if (window._chartsReady) updateCharts(agg);
+      renderDims(agg.dims);
+      renderTags(agg);
+      renderTable(currentFilter);
+
+      // Update banner
+      const fbRevs  = allReviews.filter(r => r.fromFirebase);
+      const names   = [...new Set(fbRevs.slice(0,3).map(r=>r.name))].join(', ');
+      updateSyncBanner(fbRevs.length, names);
+
+      // Toast only for truly new reviews (not initial load)
+      const newOnes = snapshot.docChanges().filter(c => c.type==='added').length;
+      if (newOnes > 0 && window._chartsReady) {
+        showToast(
+          `📬 ${newOnes} new review${newOnes>1?'s':''} received!`,
+          'Dashboard updated in real time from Firebase.'
+        );
+      }
+    }
+  });
+}
+
+// ── Save review to Firebase ────────────────────────────────────────────────────
+async function saveToFirebase(reviewData) {
+  if (!window._fbReady) return false;
+  try {
+    await window._fbAddDoc(
+      window._fbCollection(window._fbDb, 'reviews'),
+      { ...reviewData, createdAt: window._fbTimestamp() }
+    );
+    return true;
+  } catch(e) {
+    console.error('Firebase write error:', e);
+    return false;
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Load any reviews already submitted on MockShop
-  mergeUserReviews();
-  updateSyncBanner();
-
+  // Render with seed data first so page isn't blank
   const agg = computeAgg();
   renderKPIs(agg);
   renderSentBar(agg.dist, agg.total);
   initCharts(agg);
+  window._chartsReady = true;
   renderDims(agg.dims);
   renderTags(agg);
   renderTable('all');
 
-  // Start polling for new reviews from MockShop
-  startPolling();
+  // Start Firebase listener when SDK is ready
+  if (window._fbReady) {
+    startFirebaseListener();
+  } else {
+    window.addEventListener('firebaseReady', startFirebaseListener);
+  }
 });
 
 // ── Theme toggle ──────────────────────────────────────────────────────────────

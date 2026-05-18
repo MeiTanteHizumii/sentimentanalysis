@@ -139,6 +139,33 @@ footer{background:#f5f5f5;border-top:1px solid #e0e0e0;padding:20px 24px;text-al
 .wr-note{font-size:11px;color:#aaa;margin-top:8px}
 
 </style>
+<script type="module">
+import { initializeApp }          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection,
+         addDoc, onSnapshot,
+         serverTimestamp, query,
+         orderBy }                from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyB91TWksL4X60dena297YxDPoU7e_BRROw",
+  authDomain:        "sentimentiq-99650.firebaseapp.com",
+  projectId:         "sentimentiq-99650",
+  storageBucket:     "sentimentiq-99650.firebasestorage.app",
+  messagingSenderId: "217138788225",
+  appId:             "1:217138788225:web:5618cf699ebe051c6c9a80",
+};
+const fbApp = initializeApp(firebaseConfig);
+const db    = getFirestore(fbApp);
+window._fbDb         = db;
+window._fbCollection = collection;
+window._fbAddDoc     = addDoc;
+window._fbQuery      = query;
+window._fbOrderBy    = orderBy;
+window._fbOnSnapshot = onSnapshot;
+window._fbTimestamp  = serverTimestamp;
+window._fbReady      = true;
+window.dispatchEvent(new Event('firebaseReady'));
+</script>
 </head>
 <body>
 
@@ -717,9 +744,6 @@ function filterReviews(filter, btn) {
 }
 
 
-// ── localStorage key shared with dashboard ────────────────────────────────────
-const LS_KEY = 'sentimentiq_user_reviews';
-
 // ── Star picker ───────────────────────────────────────────────────────────────
 let selectedStar = 0;
 function pickStar(n) {
@@ -729,75 +753,117 @@ function pickStar(n) {
   });
 }
 
-// ── Load user reviews from localStorage ───────────────────────────────────────
-function loadUserReviews() {
+// ── Save review to Firebase ────────────────────────────────────────────────────
+async function saveToFirebase(data) {
+  if (!window._fbReady) return false;
   try {
-    const saved = localStorage.getItem(LS_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch(e) { return []; }
-}
-
-// ── Save a new user review to localStorage ────────────────────────────────────
-function saveUserReview(review) {
-  try {
-    const existing = loadUserReviews();
-    existing.unshift(review);          // newest first
-    localStorage.setItem(LS_KEY, JSON.stringify(existing));
-  } catch(e) {}
+    await window._fbAddDoc(
+      window._fbCollection(window._fbDb, 'reviews'),
+      { ...data, createdAt: window._fbTimestamp() }
+    );
+    return true;
+  } catch(e) {
+    console.error('Firebase error:', e);
+    return false;
+  }
 }
 
 // ── Submit handler ────────────────────────────────────────────────────────────
-function submitMockReview() {
+async function submitMockReview() {
   const name      = document.getElementById('wrName').value.trim() || 'Anonymous';
   const text      = document.getElementById('wrText').value.trim();
   const variation = document.getElementById('wrVariation').value;
 
-  if (!text)            { alert('Please write your review first.'); return; }
-  if (!selectedStar)    { alert('Please select a star rating.');    return; }
+  if (!text)         { alert('Please write your review first.'); return; }
+  if (!selectedStar) { alert('Please select a star rating.');    return; }
 
-  const btn = document.getElementById('wrBtn');
-  btn.disabled = true;
-  document.getElementById('wrAnalyzing').style.display = 'inline';
+  const btn     = document.getElementById('wrBtn');
+  const spinner = document.getElementById('wrAnalyzing');
+  btn.disabled  = true;
+  spinner.style.display = 'inline';
+  spinner.textContent   = '⏳ Posting to all users...';
 
-  setTimeout(() => {
-    const review = {
-      id        : Date.now(),
-      name,
-      avatar    : '👤',
-      rating    : selectedStar,
-      date      : new Date().toISOString().slice(0,10),
-      variation,
-      text,
-      hasPhoto  : false,
-      helpful   : 0,
-      reply     : null,
-      fromUser  : true,
+  const reviewData = {
+    name,
+    rating    : selectedStar,
+    date      : new Date().toISOString().slice(0,10),
+    variation,
+    text,
+  };
+
+  const saved = await saveToFirebase(reviewData);
+
+  if (saved) {
+    // Add to local list immediately (Firebase listener will also catch it)
+    const localReview = {
+      ...reviewData,
+      id      : Date.now(),
+      avatar  : '👤',
+      hasPhoto: false,
+      helpful : 0,
+      reply   : null,
     };
-
-    saveUserReview(review);
-
-    // Add to live list immediately
-    ALL_REVIEWS.unshift(review);
+    ALL_REVIEWS.unshift(localReview);
     renderReviews(currentFilter);
-
-    // Update star counts in summary
     updateRatingSummary();
 
     // Reset form
-    document.getElementById('wrName').value  = '';
-    document.getElementById('wrText').value  = '';
+    document.getElementById('wrName').value = '';
+    document.getElementById('wrText').value = '';
     selectedStar = 0;
     document.querySelectorAll('.wr-star').forEach(b => b.classList.remove('on'));
-    btn.disabled = false;
-    document.getElementById('wrAnalyzing').style.display = 'none';
 
     const successEl = document.getElementById('wrSuccess');
     successEl.style.display = 'block';
-    successEl.innerHTML = `✅ Review posted! <strong>${name}</strong>, your ${selectedStar || review.rating}★ review is live. <a href="index.html" style="color:#166534;font-weight:600">→ View on Dashboard</a>`;
+    successEl.innerHTML = `✅ Review posted to all users! <strong>${name}</strong>, your ${localReview.rating}★ review is live everywhere. <a href="index.html" target="_blank" style="color:#166534;font-weight:600">→ See on Dashboard</a>`;
 
-    // Scroll to the new review
     document.getElementById('reviewList').scrollIntoView({behavior:'smooth'});
-  }, 600);
+  } else {
+    alert('Could not save review. Check your internet connection and try again.');
+  }
+
+  btn.disabled = false;
+  spinner.style.display = 'none';
+}
+
+// ── Load Firebase reviews into the review list on page load ───────────────────
+function startFirebaseListener() {
+  const q = window._fbQuery(
+    window._fbCollection(window._fbDb, 'reviews'),
+    window._fbOrderBy('createdAt', 'desc')
+  );
+
+  window._fbOnSnapshot(q, (snapshot) => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type === 'added') {
+        const d = change.doc.data();
+        // Avoid duplicates
+        if (ALL_REVIEWS.some(r => r._fbId === change.doc.id)) return;
+        ALL_REVIEWS.unshift({
+          _fbId   : change.doc.id,
+          id      : change.doc.id,
+          name    : d.name || 'Anonymous',
+          avatar  : '👤',
+          rating  : d.rating || 3,
+          date    : d.date || '',
+          variation: d.variation || '',
+          text    : d.text || '',
+          hasPhoto: false,
+          helpful : 0,
+          reply   : null,
+        });
+      }
+    });
+
+    // Re-sort: Firebase reviews first, then seed
+    const fbRevs   = ALL_REVIEWS.filter(r => r._fbId);
+    const seedRevs = ALL_REVIEWS.filter(r => !r._fbId);
+    ALL_REVIEWS.length = 0;
+    ALL_REVIEWS.push(...fbRevs, ...seedRevs);
+
+    renderReviews(currentFilter);
+    updateRatingSummary();
+  });
 }
 
 // ── Update star distribution bars ─────────────────────────────────────────────
@@ -807,21 +873,22 @@ function updateRatingSummary() {
     const count = ALL_REVIEWS.filter(r => r.rating === s).length;
     const pct   = total ? Math.round(count / total * 100) : 0;
     const bars  = document.querySelectorAll('.bar-fill');
-    const bar   = bars[5 - s];  // bars are 5★ to 1★ top-to-bottom
+    const bar   = bars[5 - s];
     if (bar) bar.style.width = pct + '%';
     const counts = document.querySelectorAll('.bar-count');
     if (counts[5-s]) counts[5-s].textContent = count;
   });
 }
 
-// ── On load: pull in previously saved user reviews ────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────────
 (function init() {
-  const userReviews = loadUserReviews();
-  if (userReviews.length) {
-    ALL_REVIEWS.unshift(...userReviews);
-  }
   renderReviews('all');
   updateRatingSummary();
+  if (window._fbReady) {
+    startFirebaseListener();
+  } else {
+    window.addEventListener('firebaseReady', startFirebaseListener);
+  }
 })();
 </script>
 
