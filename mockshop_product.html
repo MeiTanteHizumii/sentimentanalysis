@@ -109,6 +109,35 @@ nav{background:#ee4d2d;padding:0 24px;height:56px;display:flex;align-items:cente
 
 /* Footer */
 footer{background:#f5f5f5;border-top:1px solid #e0e0e0;padding:20px 24px;text-align:center;font-size:12px;color:#999;margin-top:40px}
+
+/* ── Review submit form ─────────────────────────────── */
+.write-review-section{max-width:1200px;margin:0 auto 40px;padding:0 16px}
+.write-review-card{background:white;padding:28px;border:1px solid #f0f0f0}
+.wr-title{font-size:18px;font-weight:600;margin-bottom:4px;color:#222}
+.wr-sub{font-size:13px;color:#888;margin-bottom:20px}
+.wr-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.wr-full{margin-bottom:14px}
+.wr-label{font-size:12px;color:#555;margin-bottom:6px;display:block;font-weight:500}
+.wr-input,.wr-select,.wr-textarea{
+  width:100%;padding:10px 14px;border:1px solid #e0e0e0;
+  font-family:'Roboto',sans-serif;font-size:13px;color:#222;
+  outline:none;background:white;transition:border-color .2s;
+}
+.wr-input:focus,.wr-select:focus,.wr-textarea:focus{border-color:#ee4d2d}
+.wr-textarea{resize:vertical;min-height:100px}
+.wr-stars{display:flex;gap:6px;margin-bottom:14px}
+.wr-star{font-size:28px;color:#e0e0e0;cursor:pointer;transition:color .15s,transform .15s;background:none;border:none;line-height:1}
+.wr-star.on,.wr-star:hover{color:#ee4d2d;transform:scale(1.15)}
+.wr-star-label{font-size:12px;color:#888;margin-bottom:8px}
+.wr-btn{background:#ee4d2d;color:white;border:none;padding:12px 28px;
+  font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;font-family:'Roboto',sans-serif}
+.wr-btn:hover{background:#d03a1c}
+.wr-btn:disabled{background:#ccc;cursor:not-allowed}
+.wr-success{display:none;background:#f0faf4;border:1px solid #bbf7d0;
+  padding:14px 18px;margin-top:14px;color:#166534;font-size:13px;border-left:4px solid #22c55e}
+.wr-analyzing{display:none;font-size:12px;color:#ee4d2d;margin-left:12px;vertical-align:middle}
+.wr-note{font-size:11px;color:#aaa;margin-top:8px}
+
 </style>
 </head>
 <body>
@@ -617,6 +646,7 @@ footer{background:#f5f5f5;border-top:1px solid #e0e0e0;padding:20px 24px;text-al
 
 <footer>
   MockShop PH &nbsp;·&nbsp; This is a demo page for school/testing purposes only &nbsp;·&nbsp; Not affiliated with Shopee
+  &nbsp;·&nbsp; <a href="index.html" style="color:#ee4d2d;text-decoration:none">📊 View Sentiment Dashboard →</a>
 </footer>
 
 <script>
@@ -686,7 +716,158 @@ function filterReviews(filter, btn) {
   renderReviews(filter);
 }
 
-renderReviews('all');
+
+// ── localStorage key shared with dashboard ────────────────────────────────────
+const LS_KEY = 'sentimentiq_user_reviews';
+
+// ── Star picker ───────────────────────────────────────────────────────────────
+let selectedStar = 0;
+function pickStar(n) {
+  selectedStar = n;
+  document.querySelectorAll('.wr-star').forEach((b,i) => {
+    b.classList.toggle('on', i < n);
+  });
+}
+
+// ── Load user reviews from localStorage ───────────────────────────────────────
+function loadUserReviews() {
+  try {
+    const saved = localStorage.getItem(LS_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch(e) { return []; }
+}
+
+// ── Save a new user review to localStorage ────────────────────────────────────
+function saveUserReview(review) {
+  try {
+    const existing = loadUserReviews();
+    existing.unshift(review);          // newest first
+    localStorage.setItem(LS_KEY, JSON.stringify(existing));
+  } catch(e) {}
+}
+
+// ── Submit handler ────────────────────────────────────────────────────────────
+function submitMockReview() {
+  const name      = document.getElementById('wrName').value.trim() || 'Anonymous';
+  const text      = document.getElementById('wrText').value.trim();
+  const variation = document.getElementById('wrVariation').value;
+
+  if (!text)            { alert('Please write your review first.'); return; }
+  if (!selectedStar)    { alert('Please select a star rating.');    return; }
+
+  const btn = document.getElementById('wrBtn');
+  btn.disabled = true;
+  document.getElementById('wrAnalyzing').style.display = 'inline';
+
+  setTimeout(() => {
+    const review = {
+      id        : Date.now(),
+      name,
+      avatar    : '👤',
+      rating    : selectedStar,
+      date      : new Date().toISOString().slice(0,10),
+      variation,
+      text,
+      hasPhoto  : false,
+      helpful   : 0,
+      reply     : null,
+      fromUser  : true,
+    };
+
+    saveUserReview(review);
+
+    // Add to live list immediately
+    ALL_REVIEWS.unshift(review);
+    renderReviews(currentFilter);
+
+    // Update star counts in summary
+    updateRatingSummary();
+
+    // Reset form
+    document.getElementById('wrName').value  = '';
+    document.getElementById('wrText').value  = '';
+    selectedStar = 0;
+    document.querySelectorAll('.wr-star').forEach(b => b.classList.remove('on'));
+    btn.disabled = false;
+    document.getElementById('wrAnalyzing').style.display = 'none';
+
+    const successEl = document.getElementById('wrSuccess');
+    successEl.style.display = 'block';
+    successEl.innerHTML = `✅ Review posted! <strong>${name}</strong>, your ${selectedStar || review.rating}★ review is live. <a href="index.html" style="color:#166534;font-weight:600">→ View on Dashboard</a>`;
+
+    // Scroll to the new review
+    document.getElementById('reviewList').scrollIntoView({behavior:'smooth'});
+  }, 600);
+}
+
+// ── Update star distribution bars ─────────────────────────────────────────────
+function updateRatingSummary() {
+  const total = ALL_REVIEWS.length;
+  [1,2,3,4,5].forEach(s => {
+    const count = ALL_REVIEWS.filter(r => r.rating === s).length;
+    const pct   = total ? Math.round(count / total * 100) : 0;
+    const bars  = document.querySelectorAll('.bar-fill');
+    const bar   = bars[5 - s];  // bars are 5★ to 1★ top-to-bottom
+    if (bar) bar.style.width = pct + '%';
+    const counts = document.querySelectorAll('.bar-count');
+    if (counts[5-s]) counts[5-s].textContent = count;
+  });
+}
+
+// ── On load: pull in previously saved user reviews ────────────────────────────
+(function init() {
+  const userReviews = loadUserReviews();
+  if (userReviews.length) {
+    ALL_REVIEWS.unshift(...userReviews);
+  }
+  renderReviews('all');
+  updateRatingSummary();
+})();
 </script>
+
+<!-- Write a Review -->
+<div class="write-review-section">
+  <div class="write-review-card">
+    <div class="wr-title">✍️ Write a Review</div>
+    <div class="wr-sub">Your review will appear here instantly and update the <a href="index.html" style="color:#ee4d2d">Sentiment Dashboard</a> in real time.</div>
+
+    <div class="wr-grid">
+      <div>
+        <label class="wr-label">Your Name</label>
+        <input class="wr-input" id="wrName" type="text" placeholder="e.g. Juan D."/>
+      </div>
+      <div>
+        <label class="wr-label">Color Variation</label>
+        <select class="wr-select" id="wrVariation">
+          <option>Midnight Black</option>
+          <option>Pearl White</option>
+          <option>Navy Blue</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="wr-star-label">Star Rating</div>
+    <div class="wr-stars" id="wrStars">
+      <button class="wr-star" data-v="1" onclick="pickStar(1)">★</button>
+      <button class="wr-star" data-v="2" onclick="pickStar(2)">★</button>
+      <button class="wr-star" data-v="3" onclick="pickStar(3)">★</button>
+      <button class="wr-star" data-v="4" onclick="pickStar(4)">★</button>
+      <button class="wr-star" data-v="5" onclick="pickStar(5)">★</button>
+    </div>
+
+    <div class="wr-full">
+      <label class="wr-label">Your Review</label>
+      <textarea class="wr-textarea" id="wrText" placeholder="Share your experience with the TechGo Pro Wireless Earbuds..."></textarea>
+    </div>
+
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px">
+      <button class="wr-btn" id="wrBtn" onclick="submitMockReview()">Post Review</button>
+      <span class="wr-analyzing" id="wrAnalyzing">⏳ Saving...</span>
+    </div>
+    <div class="wr-note">📊 Your review is automatically analyzed for sentiment and reflected on the <a href="index.html" style="color:#ee4d2d">dashboard</a>.</div>
+    <div class="wr-success" id="wrSuccess"></div>
+  </div>
+</div>
+
 </body>
 </html>

@@ -29,6 +29,24 @@
   --negative:  #ef4444;
   --neutral:   #3b82f6;
   --mixed:     #f59e0b;
+  --header-bg: rgba(13,13,13,0.95);
+  --chart-grid:#1c1c1c;
+  --chart-tick:#666;
+}
+
+/* ── Light mode overrides ──────────────────────────────────────────────────── */
+html.light {
+  --bg:        #f4f1eb;
+  --bg2:       #ffffff;
+  --bg3:       #f0ece2;
+  --border:    #ddd8cc;
+  --border2:   #ccc6b8;
+  --text:      #1a1612;
+  --muted:     #888070;
+  --muted2:    #bbb0a0;
+  --header-bg: rgba(244,241,235,0.97);
+  --chart-grid:#ede9df;
+  --chart-tick:#999;
 }
 
 html { scroll-behavior: smooth; }
@@ -45,7 +63,7 @@ body {
 body::before {
   content: '';
   position: fixed; inset: 0;
-  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px);
   pointer-events: none; z-index: 9998;
 }
 
@@ -57,7 +75,7 @@ header {
   align-items: stretch;
   justify-content: space-between;
   position: sticky; top: 0;
-  background: rgba(13,13,13,0.95);
+  background: var(--header-bg);
   backdrop-filter: blur(12px);
   z-index: 100;
 }
@@ -590,6 +608,90 @@ footer {
 
 footer a { color: var(--accent); text-decoration: none; }
 footer a:hover { color: var(--accent2); }
+
+
+/* ── Theme toggle ──────────────────────────────────────────────────────────── */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 24px;
+  border-left: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.theme-icon {
+  font-size: 14px;
+  line-height: 1;
+  transition: transform 0.4s ease, opacity 0.2s;
+}
+
+.toggle-track {
+  width: 44px;
+  height: 24px;
+  background: var(--border2);
+  border-radius: 100px;
+  position: relative;
+  transition: background 0.3s ease;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+html.light .toggle-track {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: var(--text);
+  border-radius: 50%;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), background 0.3s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+html.light .toggle-knob {
+  transform: translateX(20px);
+  background: white;
+}
+
+.theme-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 0.3s;
+}
+
+/* ── User review banner ──────────────────────────────── */
+.user-review-banner {
+  display:none;
+  background:rgba(34,197,94,0.08);
+  border:1px solid rgba(34,197,94,0.3);
+  border-left:3px solid var(--green);
+  padding:10px 18px;
+  font-size:11px;
+  color:var(--green);
+  letter-spacing:1px;
+  margin-bottom:16px;
+  align-items:center;
+  gap:10px;
+}
+.user-review-banner.show { display:flex; }
+.banner-dot {
+  width:8px; height:8px;
+  background:var(--green);
+  border-radius:50%;
+  animation:pulse 1.5s infinite;
+  flex-shrink:0;
+}
+
 </style>
 </head>
 <body>
@@ -604,9 +706,16 @@ footer a:hover { color: var(--accent2); }
   </div>
   <div class="header-center">
     <span>Analyzing:</span>
-    <a class="product-link" href="mockshop_product.html" target="_blank">
+    <a class="product-link" href="https://meitantehizumii.github.io/sentimentanalysis/mockshop_product.html" target="_blank">
       ↗ MockShop — TechGo Pro Wireless Earbuds
     </a>
+  </div>
+  <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+    <span class="theme-icon" id="themeIcon">🌙</span>
+    <div class="toggle-track">
+      <div class="toggle-knob"></div>
+    </div>
+    <span class="theme-label" id="themeLabel">Dark</span>
   </div>
   <div class="live-pill">
     <div class="live-dot"></div>
@@ -615,6 +724,13 @@ footer a:hover { color: var(--accent2); }
 </header>
 
 <div class="page">
+
+  <!-- User review sync banner -->
+  <div class="user-review-banner" id="syncBanner">
+    <div class="banner-dot"></div>
+    <span id="syncBannerText">Loading reviews from MockShop...</span>
+    <a href="mockshop_product.html" target="_blank" style="color:var(--green);margin-left:auto;text-decoration:none;font-size:10px">↗ Open MockShop</a>
+  </div>
 
   <!-- KPIs -->
   <div class="section-label">Overview</div>
@@ -782,9 +898,9 @@ footer a:hover { color: var(--accent2); }
 <footer>
   <span>SentimentIQ &nbsp;·&nbsp; VADER + TextBlob Ensemble &nbsp;·&nbsp; School Project Demo</span>
   <span>
-    <a href="mockshop_product.html" target="_blank">↗ View MockShop Product Page</a>
+    <a href="https://meitantehizumii.github.io/sentimentanalysis/mockshop_product.html" target="_blank">↗ View MockShop Product Page</a>
     &nbsp;·&nbsp;
-    <a href="https://github.com" target="_blank">↗ GitHub</a>
+    <a href="https://github.com/MeiTanteHizumii/sentimentanalysis" target="_blank">↗ GitHub Repo</a>
   </span>
 </footer>
 
@@ -1199,9 +1315,23 @@ function submitReview() {
     const today    = new Date().toISOString().slice(0,10);
 
     const newReview = {
+      _id: String(Date.now()),
       name, rating: selectedStar, date: today,
       variation, text, analyzed, isNew: true,
+      fromMockShop: false,
     };
+    // Save to localStorage so MockShop page also shows it
+    try {
+      const saved = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+      saved.unshift({
+        id: newReview._id || Date.now(),
+        name: newReview.name, rating: newReview.rating,
+        date: newReview.date, variation: newReview.variation,
+        text: newReview.text, hasPhoto: false, helpful: 0,
+        reply: null, fromUser: true,
+      });
+      localStorage.setItem(LS_KEY, JSON.stringify(saved));
+    } catch(e) {}
     allReviews.unshift(newReview);
 
     // Re-render everything
@@ -1251,8 +1381,91 @@ function showToast(title, body) {
 
 function pct(n, t) { return t ? Math.round(n/t*100) : 0; }
 
-// ── Init ─────────────────────────────────────────────────────────────────────
+// ── localStorage key (shared with mockshop_product.html) ─────────────────────
+const LS_KEY = 'sentimentiq_user_reviews';
+
+function loadUserReviews() {
+  try {
+    const saved = localStorage.getItem(LS_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch(e) { return []; }
+}
+
+// ── Merge localStorage reviews into allReviews ────────────────────────────────
+function mergeUserReviews() {
+  const userRevs = loadUserReviews();
+  if (!userRevs.length) return 0;
+
+  // Avoid duplicates by id
+  const existingIds = new Set(allReviews.map(r => r._id));
+  let added = 0;
+  userRevs.forEach(r => {
+    const uid = String(r.id);
+    if (!existingIds.has(uid)) {
+      allReviews.unshift({
+        name      : r.name,
+        rating    : r.rating,
+        date      : r.date,
+        variation : r.variation,
+        text      : r.text,
+        analyzed  : scoreText(r.text, r.rating),
+        isNew     : false,
+        _id       : uid,
+        fromMockShop: true,
+      });
+      existingIds.add(uid);
+      added++;
+    }
+  });
+  return added;
+}
+
+// ── Poll localStorage every 3 seconds for new reviews ────────────────────────
+function startPolling() {
+  let lastCount = loadUserReviews().length;
+
+  setInterval(() => {
+    const current = loadUserReviews();
+    if (current.length !== lastCount) {
+      const added = mergeUserReviews();
+      if (added > 0) {
+        lastCount = current.length;
+        const agg = computeAgg();
+        renderKPIs(agg);
+        renderSentBar(agg.dist, agg.total);
+        updateCharts(agg);
+        renderDims(agg.dims);
+        renderTags(agg);
+        renderTable(currentFilter);
+        updateSyncBanner();
+        showToast(
+          `📬 ${added} new review${added>1?'s':''} from MockShop!`,
+          'Dashboard updated with latest sentiment data.'
+        );
+      }
+    }
+  }, 3000);
+}
+
+function updateSyncBanner() {
+  const userRevs = loadUserReviews();
+  const banner   = document.getElementById('syncBanner');
+  const text     = document.getElementById('syncBannerText');
+  if (userRevs.length > 0) {
+    banner.classList.add('show');
+    const names = [...new Set(userRevs.map(r => r.name))].slice(0,3).join(', ');
+    text.textContent = `${userRevs.length} review${userRevs.length>1?'s':''} synced from MockShop · Latest by ${names}`;
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  // Load any reviews already submitted on MockShop
+  mergeUserReviews();
+  updateSyncBanner();
+
   const agg = computeAgg();
   renderKPIs(agg);
   renderSentBar(agg.dist, agg.total);
@@ -1260,7 +1473,46 @@ document.addEventListener('DOMContentLoaded', () => {
   renderDims(agg.dims);
   renderTags(agg);
   renderTable('all');
+
+  // Start polling for new reviews from MockShop
+  startPolling();
 });
+
+// ── Theme toggle ──────────────────────────────────────────────────────────────
+function applyTheme(light) {
+  document.documentElement.classList.toggle('light', light);
+  document.getElementById('themeIcon').textContent  = light ? '☀️' : '🌙';
+  document.getElementById('themeLabel').textContent = light ? 'Light' : 'Dark';
+
+  // Update chart colors to match theme
+  const grid = light ? '#ede9df' : '#1c1c1c';
+  const tick = light ? '#999'    : '#666';
+
+  [donutChart, starChart, stackedChart].forEach(chart => {
+    if (!chart) return;
+    chart.options.plugins.legend.labels.color = tick;
+    if (chart.options.scales) {
+      Object.values(chart.options.scales).forEach(scale => {
+        if (scale.ticks) scale.ticks.color = tick;
+        if (scale.grid)  scale.grid.color  = grid;
+      });
+    }
+    chart.update();
+  });
+}
+
+function toggleTheme() {
+  const isLight = !document.documentElement.classList.contains('light');
+  localStorage.setItem('sentimentiq_theme', isLight ? 'light' : 'dark');
+  applyTheme(isLight);
+}
+
+// Load saved theme preference on startup
+(function loadTheme() {
+  const saved = localStorage.getItem('sentimentiq_theme');
+  if (saved === 'light') applyTheme(true);
+})();
+
 </script>
 </body>
 </html>
