@@ -5,8 +5,8 @@
 
 ## 🌐 Live Demo
 
-**[View Dashboard →](https://YOUR-USERNAME.github.io/sentimentiq/)**  
-**[View MockShop Product Page →](https://YOUR-USERNAME.github.io/sentimentiq/mockshop_product.html)**
+**[View Dashboard →](https://meitantehizumii.github.io/sentimentanalysis/)**  
+**[View MockShop Product Page →](https://meitantehizumii.github.io/sentimentanalysis/mockshop_product.html)**
 
 ---
 
