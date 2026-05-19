@@ -37,7 +37,8 @@ window._fbTimestamp  = serverTimestamp;
 window._fbReady      = true;
 
 // Notify dashboard that Firebase is ready
-window.dispatchEvent(new Event('firebaseReady'));
+// Don't dispatch event — module runs after DOMContentLoaded.
+// Dashboard polls window._fbReady instead.
 </script>
 <style>
 /* ── Reset & Variables ─────────────────────────────────────────────────────── */
@@ -1504,7 +1505,7 @@ async function saveToFirebase(reviewData) {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Render with seed data first so page isn't blank
+  // ── Render seed data immediately — page is never blank ──────────────────────
   const agg = computeAgg();
   renderKPIs(agg);
   renderSentBar(agg.dist, agg.total);
@@ -1514,12 +1515,21 @@ document.addEventListener('DOMContentLoaded', () => {
   renderTags(agg);
   renderTable('all');
 
-  // Start Firebase listener when SDK is ready
-  if (window._fbReady) {
-    startFirebaseListener();
-  } else {
-    window.addEventListener('firebaseReady', startFirebaseListener);
-  }
+  // ── Wait for Firebase module to load, then start listener ───────────────────
+  // Firebase <script type="module"> always executes AFTER DOMContentLoaded,
+  // so we poll until window._fbReady is true (usually <100ms after paint).
+  let fbAttempts = 0;
+  const fbPoll = setInterval(() => {
+    fbAttempts++;
+    if (window._fbReady) {
+      clearInterval(fbPoll);
+      startFirebaseListener();
+    } else if (fbAttempts > 50) {
+      // Gave up after 5 seconds — offline or blocked
+      clearInterval(fbPoll);
+      console.warn('Firebase did not load — running with seed data only.');
+    }
+  }, 100);
 });
 
 // ── Theme toggle ──────────────────────────────────────────────────────────────

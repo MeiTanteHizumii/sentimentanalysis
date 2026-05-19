@@ -164,7 +164,7 @@ window._fbOrderBy    = orderBy;
 window._fbOnSnapshot = onSnapshot;
 window._fbTimestamp  = serverTimestamp;
 window._fbReady      = true;
-window.dispatchEvent(new Event('firebaseReady'));
+// Module runs after DOM — mockshop polls _fbReady below.
 </script>
 </head>
 <body>
@@ -884,11 +884,19 @@ function updateRatingSummary() {
 (function init() {
   renderReviews('all');
   updateRatingSummary();
-  if (window._fbReady) {
-    startFirebaseListener();
-  } else {
-    window.addEventListener('firebaseReady', startFirebaseListener);
-  }
+
+  // Poll for Firebase SDK (module scripts run after DOMContentLoaded)
+  let attempts = 0;
+  const poll = setInterval(() => {
+    attempts++;
+    if (window._fbReady) {
+      clearInterval(poll);
+      startFirebaseListener();
+    } else if (attempts > 50) {
+      clearInterval(poll);
+      console.warn('Firebase not available — reviews will not sync.');
+    }
+  }, 100);
 })();
 </script>
 
