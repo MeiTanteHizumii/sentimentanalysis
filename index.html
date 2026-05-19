@@ -183,7 +183,7 @@ header {
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.3;transform:scale(0.6)} }
 
 /* ── Layout ────────────────────────────────────────────────────────────────── */
-.page { max-width: 1280px; margin: 0 auto; padding: 32px; }
+.page { max-width: 1280px; margin: 0 auto; padding: 32px; box-sizing: border-box; width: 100%; }
 
 /* ── Section labels ────────────────────────────────────────────────────────── */
 .section-label {
@@ -211,6 +211,14 @@ header {
   border: 1px solid var(--border);
   margin-bottom: 24px;
   animation: fadeUp 0.5s ease both;
+  overflow: hidden;
+}
+@media (max-width: 900px) {
+  .kpi-strip { grid-template-columns: repeat(3, 1fr); }
+  .kpi { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+}
+@media (max-width: 600px) {
+  .kpi-strip { grid-template-columns: 1fr 1fr; }
 }
 
 @keyframes fadeUp {
@@ -263,9 +271,17 @@ header {
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
+  .grid3 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) {
   .grid2, .grid3 { grid-template-columns: 1fr; }
   .kpi-strip { grid-template-columns: 1fr 1fr; }
+  .alerts { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  header { flex-wrap: wrap; padding: 12px 16px; gap: 8px; }
+  .header-center { display: none; }
+  .page { padding: 16px; }
 }
 
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
@@ -623,8 +639,29 @@ select option { background: var(--bg3); }
 .toast-title { font-size: 12px; margin-bottom: 4px; color: var(--text); }
 .toast-body { color: var(--muted); font-size: 10px; }
 
+
+/* ── Word cloud ────────────────────────────────────────────────────────────── */
+.wordcloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 4px;
+  min-height: 180px;
+}
+.wc-word {
+  cursor: default;
+  line-height: 1.2;
+  transition: opacity 0.2s;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: -0.5px;
+}
+.wc-word:hover { opacity: 0.7; }
+
 /* ── Chart containers ──────────────────────────────────────────────────────── */
-.chart-box { position: relative; }
+.chart-box { position: relative; width: 100%; min-width: 0; }
+.chart-box canvas { max-width: 100% !important; height: auto !important; }
 
 /* ── Footer ────────────────────────────────────────────────────────────────── */
 footer {
@@ -822,19 +859,39 @@ html.light .toggle-knob {
 
   <!-- Charts row -->
   <div class="section-label">Analytics</div>
+
+  <!-- Row 1: original 3 charts -->
   <div class="grid3" style="margin-bottom:16px">
     <div class="card chart-box">
-      <div class="card-title">Sentiment Split</div>
-      <canvas id="donutChart" height="200"></canvas>
+      <div class="card-title">Sentiment Distribution</div>
+      <canvas id="donutChart"></canvas>
     </div>
     <div class="card chart-box">
       <div class="card-title">Star Distribution</div>
-      <canvas id="starChart" height="200"></canvas>
+      <canvas id="starChart"></canvas>
     </div>
     <div class="card chart-box">
       <div class="card-title">Sentiment × Stars</div>
-      <canvas id="stackedChart" height="200"></canvas>
+      <canvas id="stackedChart"></canvas>
     </div>
+  </div>
+
+  <!-- Row 2: Lab 5 style charts -->
+  <div class="grid2" style="margin-bottom:16px">
+    <div class="card chart-box">
+      <div class="card-title">Rating vs Sentiment Score (VADER Compound)</div>
+      <canvas id="scatterChart"></canvas>
+    </div>
+    <div class="card chart-box">
+      <div class="card-title">Compound Score per Review</div>
+      <canvas id="compoundChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Row 3: word cloud full width -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Positive Review Word Cloud <span style="font-size:9px;color:var(--muted);letter-spacing:1px">(words from 😊 positive reviews only)</span></div>
+    <div class="wordcloud" id="wordCloud"></div>
   </div>
 
   <div class="grid2" style="margin-bottom:16px">
@@ -1080,7 +1137,7 @@ var allReviews = SEED.map(function(r){
 
 var currentFilter = 'all';
 var selectedStar  = 0;
-var donutChart, starChart, stackedChart;
+var donutChart, starChart, stackedChart, scatterChart, compoundChart;
 
 var COLORS = { positive:'#22c55e', negative:'#ef4444', neutral:'#3b82f6', mixed:'#f59e0b' };
 
@@ -1215,14 +1272,14 @@ function initCharts(agg){
   donutChart=new Chart(document.getElementById('donutChart'),{
     type:'doughnut',
     data:{labels:Object.keys(d),datasets:[{data:Object.values(d),backgroundColor:Object.keys(d).map(function(s){ return COLORS[s]; }),borderWidth:0,hoverOffset:6}]},
-    options:{cutout:'65%',plugins:{legend:{labels:{color:'#888',font:{family:'DM Mono',size:10}}}}}
+    options:{responsive:true,maintainAspectRatio:true,cutout:'65%',plugins:{legend:{labels:{color:'#888',font:{family:'DM Mono',size:10}}}}}
   });
 
   var sc=[1,2,3,4,5].map(function(s){ return allReviews.filter(function(r){ return r.rating===s; }).length; });
   starChart=new Chart(document.getElementById('starChart'),{
     type:'bar',
     data:{labels:['1★','2★','3★','4★','5★'],datasets:[{data:sc,backgroundColor:['#ef4444','#fb923c','#f59e0b','#86efac','#22c55e'],borderRadius:2,borderSkipped:false}]},
-    options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{family:'DM Mono',size:10}},grid:{color:'#1c1c1c'}},y:{ticks:{color:'#666',font:{family:'DM Mono',size:10}},grid:{color:'#1c1c1c'}}}}
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{family:'DM Mono',size:10}},grid:{color:'#1c1c1c'}},y:{ticks:{color:'#666',font:{family:'DM Mono',size:10}},grid:{color:'#1c1c1c'}}}}
   });
 
   var sents=['positive','negative','neutral','mixed'];
@@ -1231,8 +1288,90 @@ function initCharts(agg){
     data:{labels:['1★','2★','3★','4★','5★'],datasets:sents.map(function(s){
       return {label:s,data:[1,2,3,4,5].map(function(star){ return allReviews.filter(function(r){ return r.rating===star&&r.analyzed.sentiment===s; }).length; }),backgroundColor:COLORS[s],borderRadius:2};
     })},
-    options:{plugins:{legend:{labels:{color:'#888',font:{family:'DM Mono',size:10}}}},scales:{x:{stacked:true,ticks:{color:'#666',font:{family:'DM Mono',size:10}},grid:{color:'#1c1c1c'}},y:{stacked:true,ticks:{color:'#666',font:{family:'DM Mono',size:10}},grid:{color:'#1c1c1c'}}}}
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#888',font:{family:'DM Mono',size:10}}}},scales:{x:{stacked:true,ticks:{color:'#666',font:{family:'DM Mono',size:10}},grid:{color:'#1c1c1c'}},y:{stacked:true,ticks:{color:'#666',font:{family:'DM Mono',size:10}},grid:{color:'#1c1c1c'}}}}
   });
+
+  // ── Scatter: Rating vs VADER Compound Score (Lab 5 style) ────────────────────
+  var scatterData = allReviews.map(function(r){
+    return { x: r.rating, y: parseFloat(r.analyzed.vader.toFixed(3)), sentiment: r.analyzed.sentiment };
+  });
+  var scatterDatasets = ['positive','negative','neutral','mixed'].map(function(s){
+    return {
+      label: s.charAt(0).toUpperCase()+s.slice(1),
+      data: scatterData.filter(function(d){ return d.sentiment===s; }).map(function(d){ return {x:d.x, y:d.y}; }),
+      backgroundColor: COLORS[s]+'cc',
+      pointRadius: 7, pointHoverRadius: 10,
+    };
+  }).filter(function(ds){ return ds.data.length>0; });
+
+  scatterChart = new Chart(document.getElementById('scatterChart'),{
+    type:'scatter',
+    data:{ datasets: scatterDatasets },
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      plugins:{ legend:{ labels:{ color:'#888', font:{family:'DM Mono',size:10} } } },
+      scales:{
+        x:{ title:{display:true,text:'Star Rating',color:'#888',font:{family:'DM Mono',size:10}}, min:0.5, max:5.5, ticks:{color:'#666',font:{family:'DM Mono',size:10}}, grid:{color:'#1c1c1c'} },
+        y:{ title:{display:true,text:'VADER Compound Score',color:'#888',font:{family:'DM Mono',size:10}}, min:-1.1, max:1.1, ticks:{color:'#666',font:{family:'DM Mono',size:10}}, grid:{color:'#1c1c1c'} }
+      }
+    }
+  });
+
+  // ── Compound bar: Score per Review (Lab 5 style) ──────────────────────────────
+  var compLabels = allReviews.map(function(r,i){ return 'R'+(i+1); });
+  var compScores = allReviews.map(function(r){ return parseFloat(r.analyzed.vader.toFixed(3)); });
+  var compColors = allReviews.map(function(r){ return r.analyzed.vader>=0 ? '#22c55e' : '#ef4444'; });
+
+  compoundChart = new Chart(document.getElementById('compoundChart'),{
+    type:'bar',
+    data:{
+      labels: compLabels,
+      datasets:[{
+        label:'Compound Score',
+        data: compScores,
+        backgroundColor: compColors,
+        borderRadius: 2,
+        borderSkipped: false,
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      plugins:{
+        legend:{display:false},
+        annotation:{ annotations:{ line1:{ type:'line', y:0, borderColor:'#666', borderWidth:1, borderDash:[4,4] } } }
+      },
+      scales:{
+        x:{ ticks:{color:'#666',font:{family:'DM Mono',size:9},maxRotation:0}, grid:{color:'#1c1c1c'} },
+        y:{ min:-1.1, max:1.1, ticks:{color:'#666',font:{family:'DM Mono',size:10}}, grid:{color:'#1c1c1c'} }
+      }
+    }
+  });
+
+  // ── Word cloud: positive reviews only ─────────────────────────────────────────
+  renderWordCloud();
+}
+
+function renderWordCloud(){
+  var positiveRevs = allReviews.filter(function(r){ return r.analyzed.sentiment==='positive'; });
+  var freq = {};
+  var STOP = new Set(['the','a','an','and','or','but','in','on','at','to','for','of','with','by','is','it','this','that','was','are','be','have','had','i','my','so','very','just','also','as','if','its','me','we','our','they','you','your','all','can','no','up','about','after','more','one','from','get','been','do','did','does','its','than','then']);
+  positiveRevs.forEach(function(r){
+    r.text.toLowerCase().replace(/[^a-z\s]/g,'').split(/\s+/).forEach(function(w){
+      if (w.length>3 && !STOP.has(w)) freq[w]=(freq[w]||0)+1;
+    });
+  });
+  var words = Object.entries(freq).sort(function(a,b){ return b[1]-a[1]; }).slice(0,40);
+  var max = words.length ? words[0][1] : 1;
+  var greens = ['#14532d','#166534','#15803d','#16a34a','#22c55e','#4ade80','#86efac'];
+  var container = document.getElementById('wordCloud');
+  if (!container) return;
+  container.innerHTML = words.map(function(e){
+    var word=e[0], count=e[1];
+    var size = Math.round(12 + (count/max)*32);
+    var color = greens[Math.floor((count/max)*(greens.length-1))];
+    var rotate = Math.random()>0.75 ? 'rotate(-15deg)' : Math.random()>0.5 ? 'rotate(15deg)' : 'rotate(0deg)';
+    return '<span class="wc-word" style="font-size:'+size+'px;color:'+color+';transform:'+rotate+';display:inline-block" title="'+word+': '+count+' times">'+word+'</span>';
+  }).join('');
 }
 
 function updateCharts(agg){
@@ -1242,6 +1381,28 @@ function updateCharts(agg){
   stackedChart.data.datasets.forEach(function(ds,i){
     ds.data=[1,2,3,4,5].map(function(star){ return allReviews.filter(function(r){ return r.rating===star&&r.analyzed.sentiment===sents[i]; }).length; });
   }); stackedChart.update();
+
+  // Update scatter
+  if (scatterChart) {
+    var newScatter = allReviews.map(function(r){ return {x:r.rating, y:parseFloat(r.analyzed.vader.toFixed(3)), sentiment:r.analyzed.sentiment}; });
+    sents.forEach(function(s,i){
+      if (scatterChart.data.datasets[i]) {
+        scatterChart.data.datasets[i].data = newScatter.filter(function(d){ return d.sentiment===s; }).map(function(d){ return {x:d.x,y:d.y}; });
+      }
+    });
+    scatterChart.update();
+  }
+
+  // Update compound bar
+  if (compoundChart) {
+    compoundChart.data.labels = allReviews.map(function(r,i){ return 'R'+(i+1); });
+    compoundChart.data.datasets[0].data = allReviews.map(function(r){ return parseFloat(r.analyzed.vader.toFixed(3)); });
+    compoundChart.data.datasets[0].backgroundColor = allReviews.map(function(r){ return r.analyzed.vader>=0?'#22c55e':'#ef4444'; });
+    compoundChart.update();
+  }
+
+  // Update word cloud
+  renderWordCloud();
 }
 
 // ── Submit (dashboard form) ────────────────────────────────────────────────────
@@ -1349,7 +1510,7 @@ function applyTheme(light){
   document.getElementById('themeIcon').textContent  = light?'☀️':'🌙';
   document.getElementById('themeLabel').textContent = light?'Light':'Dark';
   var grid=light?'#ede9df':'#1c1c1c', tick=light?'#999':'#666';
-  [donutChart,starChart,stackedChart].forEach(function(chart){
+  [donutChart,starChart,stackedChart,scatterChart,compoundChart].forEach(function(chart){
     if (!chart) return;
     chart.options.plugins.legend.labels.color=tick;
     if (chart.options.scales) Object.values(chart.options.scales).forEach(function(sc){ if(sc.ticks)sc.ticks.color=tick; if(sc.grid)sc.grid.color=grid; });
