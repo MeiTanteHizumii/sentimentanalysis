@@ -974,10 +974,10 @@ html.light .toggle-knob {
 
     <div class="submit-row">
       <button class="btn-submit" id="submitBtn" onclick="submitReview()">
-        ▶ Analyze & Submit
+        <div class="spin" id="spinner" style="display:none"></div>
+        <span id="btnText">▶ Analyze & Submit</span>
       </button>
       <div class="analyzing" id="analyzingEl">
-        <div class="spin"></div>
         <span>ANALYZING...</span>
       </div>
       <span class="submit-note" id="submitNote"></span>
@@ -1413,7 +1413,7 @@ function waitForFirebase(){
     var iv=setInterval(function(){
       tries++;
       if (window._fbReady){ clearInterval(iv); resolve(); }
-      else if (tries>100){ clearInterval(iv); resolve(); } // give up after 10s, still submit locally
+      else if (tries>100){ clearInterval(iv); resolve(); }
     },100);
   });
 }
@@ -1424,58 +1424,60 @@ async function submitReview(){
   var text      = document.getElementById('inputText').value.trim();
   var variation = document.getElementById('inputVariation').value;
 
-  if (!text)          { document.getElementById('submitNote').textContent='Please write your review first.'; return; }
-  if (!selectedStar)  { document.getElementById('submitNote').textContent='Please select a star rating.'; return; }
+  if (!text)         { document.getElementById('submitNote').textContent='Please write your review first.'; return; }
+  if (!selectedStar) { document.getElementById('submitNote').textContent='Please select a star rating.'; return; }
 
-  document.getElementById('submitBtn').disabled=true;
-  document.getElementById('spinner').style.display='block';
-  document.getElementById('btnText').textContent='Analyzing...';
-  document.getElementById('submitNote').textContent='';
+  var btn     = document.getElementById('submitBtn');
+  var spinner = document.getElementById('spinner');
+  var btnText = document.getElementById('btnText');
+  var note    = document.getElementById('submitNote');
 
-  // Wait for Firebase before doing anything
+  btn.disabled=true;
+  spinner.style.display='inline-block';
+  btnText.textContent='Analyzing...';
+  note.textContent='';
+
   await waitForFirebase();
 
-  setTimeout(async function(){
-    var today   = new Date().toISOString().slice(0,10);
-    var analyzed= scoreText(text, selectedStar);
-    var review  = { _id:'usr_'+Date.now(), name:name, rating:selectedStar, date:today, variation:variation, text:text, analyzed:analyzed, isNew:true };
+  await new Promise(function(r){ setTimeout(r,800); });
 
-    // Save to Firebase
-    if (window._fbReady && window._fbAddDoc && window._fbCollection && window._fbDb) {
-      try {
-        await window._fbAddDoc(window._fbCollection(window._fbDb,'reviews'),{
-          name:name, rating:selectedStar, date:today, variation:variation, text:text,
-          createdAt: window._fbTimestamp()
-        });
-        console.log('✅ Review saved to Firestore');
-      } catch(e) {
-        console.error('❌ Firebase write error:', e.code, e.message);
-        document.getElementById('submitNote').textContent='Saved locally. Firebase: '+e.message;
-      }
-    } else {
-      console.warn('Firebase not ready — saved locally only');
+  var today   = new Date().toISOString().slice(0,10);
+  var analyzed= scoreText(text, selectedStar);
+  var review  = { _id:'usr_'+Date.now(), name:name, rating:selectedStar, date:today, variation:variation, text:text, analyzed:analyzed, isNew:true };
+
+  // Save to Firebase
+  if (window._fbReady && window._fbAddDoc) {
+    try {
+      await window._fbAddDoc(window._fbCollection(window._fbDb,'reviews'),{
+        name:name, rating:selectedStar, date:today, variation:variation, text:text,
+        createdAt: window._fbTimestamp()
+      });
+      console.log('✅ Saved to Firestore');
+    } catch(e) {
+      console.error('❌ Firestore error:', e.code, e.message);
+      note.textContent='Note: '+e.message;
     }
+  }
 
-    // Add locally immediately (Firebase listener will dedup)
-    var fbIds = new Set(allReviews.map(function(r){ return r._id; }));
-    if (!fbIds.has(review._id)) allReviews.unshift(review);
+  // Add locally immediately
+  var fbIds = new Set(allReviews.map(function(r){ return r._id; }));
+  if (!fbIds.has(review._id)) allReviews.unshift(review);
 
-    var agg=computeAgg();
-    renderKPIs(agg); renderSentBar(agg.dist,agg.total); updateCharts(agg); renderDims(agg.dims); renderTags(agg); renderTable(currentFilter);
+  var agg=computeAgg();
+  renderKPIs(agg); renderSentBar(agg.dist,agg.total); updateCharts(agg); renderDims(agg.dims); renderTags(agg); renderTable(currentFilter);
 
-    document.getElementById('inputName').value='';
-    document.getElementById('inputText').value='';
-    selectedStar=0;
-    document.querySelectorAll('.star-btn').forEach(function(b){ b.classList.remove('active'); });
-    document.getElementById('submitBtn').disabled=false;
-    document.getElementById('spinner').style.display='none';
-    document.getElementById('btnText').textContent='Analyze & Submit';
+  document.getElementById('inputName').value='';
+  document.getElementById('inputText').value='';
+  selectedStar=0;
+  document.querySelectorAll('.star-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.disabled=false;
+  spinner.style.display='none';
+  btnText.textContent='▶ Analyze & Submit';
 
-    var em={positive:'😊',negative:'😠',neutral:'😐',mixed:'🎭'};
-    showToast(em[analyzed.sentiment]+' '+analyzed.sentiment.toUpperCase()+' — '+analyzed.confidence+'% confidence','Categories: '+analyzed.categories.slice(0,2).join(', '));
-    document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth',block:'start'});
-    setTimeout(function(){ review.isNew=false; renderTable(currentFilter); },3000);
-  }, 800);
+  var em={positive:'😊',negative:'😠',neutral:'😐',mixed:'🎭'};
+  showToast(em[analyzed.sentiment]+' '+analyzed.sentiment.toUpperCase()+' — '+analyzed.confidence+'% confidence','Categories: '+analyzed.categories.slice(0,2).join(', '));
+  document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth',block:'start'});
+  setTimeout(function(){ review.isNew=false; renderTable(currentFilter); },3000);
 }
 
 // ── Firebase ──────────────────────────────────────────────────────────────────
