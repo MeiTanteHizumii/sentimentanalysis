@@ -1405,8 +1405,21 @@ function updateCharts(agg){
   renderWordCloud();
 }
 
+// ── Wait for Firebase helper ───────────────────────────────────────────────────
+function waitForFirebase(){
+  return new Promise(function(resolve){
+    if (window._fbReady) return resolve();
+    var tries=0;
+    var iv=setInterval(function(){
+      tries++;
+      if (window._fbReady){ clearInterval(iv); resolve(); }
+      else if (tries>100){ clearInterval(iv); resolve(); } // give up after 10s, still submit locally
+    },100);
+  });
+}
+
 // ── Submit (dashboard form) ────────────────────────────────────────────────────
-function submitReview(){
+async function submitReview(){
   var name      = document.getElementById('inputName').value.trim()||'Anonymous';
   var text      = document.getElementById('inputText').value.trim();
   var variation = document.getElementById('inputVariation').value;
@@ -1419,17 +1432,28 @@ function submitReview(){
   document.getElementById('btnText').textContent='Analyzing...';
   document.getElementById('submitNote').textContent='';
 
-  setTimeout(function(){
+  // Wait for Firebase before doing anything
+  await waitForFirebase();
+
+  setTimeout(async function(){
     var today   = new Date().toISOString().slice(0,10);
     var analyzed= scoreText(text, selectedStar);
     var review  = { _id:'usr_'+Date.now(), name:name, rating:selectedStar, date:today, variation:variation, text:text, analyzed:analyzed, isNew:true };
 
     // Save to Firebase
-    if (window._fbReady) {
-      window._fbAddDoc(window._fbCollection(window._fbDb,'reviews'),{
-        name:name, rating:selectedStar, date:today, variation:variation, text:text,
-        createdAt: window._fbTimestamp()
-      }).catch(function(e){ console.error('Firebase write error',e); });
+    if (window._fbReady && window._fbAddDoc && window._fbCollection && window._fbDb) {
+      try {
+        await window._fbAddDoc(window._fbCollection(window._fbDb,'reviews'),{
+          name:name, rating:selectedStar, date:today, variation:variation, text:text,
+          createdAt: window._fbTimestamp()
+        });
+        console.log('✅ Review saved to Firestore');
+      } catch(e) {
+        console.error('❌ Firebase write error:', e.code, e.message);
+        document.getElementById('submitNote').textContent='Saved locally. Firebase: '+e.message;
+      }
+    } else {
+      console.warn('Firebase not ready — saved locally only');
     }
 
     // Add locally immediately (Firebase listener will dedup)
